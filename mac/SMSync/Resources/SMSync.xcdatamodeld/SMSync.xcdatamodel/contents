@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="21541" systemVersion="22G91" minimumToolsVersion="Automatic" sourceLanguage="Swift" userDefinedModelVersionIdentifier="">
+    <entity name="SMSMessageEntity" representedClassName="SMSMessageEntity" syncable="YES">
+        <attribute name="id" attributeType="Integer 64"/>
+        <attribute name="address" attributeType="String"/>
+        <attribute name="body" attributeType="String"/>
+        <attribute name="date" attributeType="Date"/>
+        <attribute name="type" attributeType="Integer 16"/>
+        <attribute name="read" attributeType="Boolean" defaultValueString="YES" usesScalarValueType="YES"/>
+        <attribute name="contactName" attributeType="String" optional="YES"/>
+        <attribute name="threadHash" attributeType="String" optional="YES"/>
+    </entity>
+    <entity name="SyncStateEntity" representedClassName="SyncStateEntity" syncable="YES">
+        <attribute name="deviceID" attributeType="String" optional="YES"/>
+        <attribute name="lastSyncTimestamp" attributeType="Date" optional="YES"/>
+        <attribute name="pairedAt" attributeType="Date" optional="YES"/>
+        <attribute name="totalSynced" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+    </entity>
+</model>

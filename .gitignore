@@ -1,0 +1,41 @@
+# Android
+.gradle/
+build/
+app/build/
+*.apk
+*.aab
+*.ap_
+*.dex
+*.class
+local.properties
+captures/
+.externalNativeBuild/
+.cxx/
+android/.idea/
+*.iml
+
+# Xcode
+mac/SMSync.xcodeproj/xcuserdata/
+mac/SMSync.xcodeproj/project.xcworkspace/xcuserdata/
+mac/SMSync/build/
+mac/SMSync/DerivedData/
+*.xcuserstate
+*.xcscmblueprint
+xcuserdata/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# JetBrains
+.idea/
+*.iml
+
+# VS Code
+.vscode/
+
+# Environment
+.env
+.env.local
