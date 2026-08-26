@@ -1,0 +1,506 @@
+{
+  "builtTestProducts" : [
+
+  ],
+  "copyCommands" : {
+
+  },
+  "explicitTargetDependencyImportCheckingMode" : {
+    "none" : {
+
+    }
+  },
+  "generatedSourceTargetSet" : [
+
+  ],
+  "pluginDescriptions" : [
+
+  ],
+  "swiftCommands" : {
+    "C.SMSync-arm64-apple-macosx15.0-debug.module" : {
+      "executable" : "/Library/Developer/CommandLineTools/usr/bin/swiftc",
+      "fileList" : "/Users/sriram/code/personal/mac-android-sms-sync/mac/.build/arm64-apple-macosx/debug/SMSync.build/sources",
+      "importPath" : "/Users/sriram/code/personal/mac-android-sms-sync/mac/.build/arm64-apple-macosx/debug/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/sriram/code/personal/mac-android-sms-sync/mac/SMSync/ContentView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/sriram/code/personal/mac-android-sms-sync/mac/SMSync/Models/Conversation.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/sriram/code/personal/mac-android-sms-sync/mac/SMSync/Models/SMSDatabase.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/sriram/code/personal/mac-android-sms-sync/mac/SMSync/Models/SMSMessage.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/sriram/code/personal/mac-android-sms-sync/mac/SMSync/Models/SMSyncEntities.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/sriram/code/personal/mac-android-sms-sync/mac/SMSync/SMSyncApp.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/sriram/code/personal/mac-android-sms-sync/mac/SMSync/Services/BonjourDiscovery.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/sriram/code/personal/mac-android-sms-sync/mac/SMSync/Services/ContactResolver.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/sriram/code/personal/mac-android-sms-sync/mac/SMSync/Services/PairingManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/sriram/code/personal/mac-android-sms-sync/mac/SMSync/Services/SMSSyncClient.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/sriram/code/personal/mac-android-sms-sync/mac/SMSync/Services/WebSocketManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/sriram/code/personal/mac-android-sms-sync/mac/SMSync/Views/ConversationListView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/sriram/code/personal/mac-android-sms-sync/mac/SMSync/Views/MainWindowView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/sriram/code/personal/mac-android-sms-sync/mac/SMSync/Views/MenuBarView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/sriram/code/personal/mac-android-sms-sync/mac/SMSync/Views/MessageThreadView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/sriram/code/personal/mac-android-sms-sync/mac/SMSync/Views/SettingsView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/sriram/code/personal/mac-android-sms-sync/mac/.build/arm64-apple-macosx/debug/swift-version--1AB21518FC5DEDBE.txt"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/sriram/code/personal/mac-android-sms-sync/mac/.build/arm64-apple-macosx/debug/SMSync.build/sources"
+        }
+      ],
+      "isLibrary" : false,
+      "moduleName" : "SMSync",
+      "moduleOutputPath" : "/Users/sriram/code/personal/mac-android-sms-sync/mac/.build/arm64-apple-macosx/debug/Modules/SMSync.swiftmodule",
+      "objects" : [
+        "/Users/sriram/code/personal/mac-android-sms-sync/mac/.build/arm64-apple-macosx/debug/SMSync.build/ContentView.swift.o",
+        "/Users/sriram/code/personal/mac-android-sms-sync/mac/.build/arm64-apple-macosx/debug/SMSync.build/Conversation.swift.o",
+        "/Users/sriram/code/personal/mac-android-sms-sync/mac/.build/arm64-apple-macosx/debug/SMSync.build/SMSDatabase.swift.o",
+        "/Users/sriram/code/personal/mac-android-sms-sync/mac/.build/arm64-apple-macosx/debug/SMSync.build/SMSMessage.swift.o",
+        "/Users/sriram/code/personal/mac-android-sms-sync/mac/.build/arm64-apple-macosx/debug/SMSync.build/SMSyncEntities.swift.o",
+        "/Users/sriram/code/personal/mac-android-sms-sync/mac/.build/arm64-apple-macosx/debug/SMSync.build/SMSyncApp.swift.o",
+        "/Users/sriram/code/personal/mac-android-sms-sync/mac/.build/arm64-apple-macosx/debug/SMSync.build/BonjourDiscovery.swift.o",
+        "/Users/sriram/code/personal/mac-android-sms-sync/mac/.build/arm64-apple-macosx/debug/SMSync.build/ContactResolver.swift.o",
+        "/Users/sriram/code/personal/mac-android-sms-sync/mac/.build/arm64-apple-macosx/debug/SMSync.build/PairingManager.swift.o",
+        "/Users/sriram/code/personal/mac-android-sms-sync/mac/.build/arm64-apple-macosx/debug/SMSync.build/SMSSyncClient.swift.o",
+        "/Users/sriram/code/personal/mac-android-sms-sync/mac/.build/arm64-apple-macosx/debug/SMSync.build/WebSocketManager.swift.o",
+        "/Users/sriram/code/personal/mac-android-sms-sync/mac/.build/arm64-apple-macosx/debug/SMSync.build/ConversationListView.swift.o",
+        "/Users/sriram/code/personal/mac-android-sms-sync/mac/.build/arm64-apple-macosx/debug/SMSync.build/MainWindowView.swift.o",
+        "/Users/sriram/code/personal/mac-android-sms-sync/mac/.build/arm64-apple-macosx/debug/SMSync.build/MenuBarView.swift.o",
+        "/Users/sriram/code/personal/mac-android-sms-sync/mac/.build/arm64-apple-macosx/debug/SMSync.build/MessageThreadView.swift.o",
+        "/Users/sriram/code/personal/mac-android-sms-sync/mac/.build/arm64-apple-macosx/debug/SMSync.build/SettingsView.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "arm64-apple-macosx13.0",
+        "-enable-batch-mode",
+        "-index-store-path",
+        "/Users/sriram/code/personal/mac-android-sms-sync/mac/.build/arm64-apple-macosx/debug/index/store",
+        "-Onone",
+        "-enable-testing",
+        "-j12",
+        "-DSWIFT_PACKAGE",
+        "-DDEBUG",
+        "-module-cache-path",
+        "/Users/sriram/code/personal/mac-android-sms-sync/mac/.build/arm64-apple-macosx/debug/ModuleCache",
+        "-parseable-output",
+        "-Xfrontend",
+        "-entry-point-function-name",
+        "-Xfrontend",
+        "SMSync_main",
+        "-swift-version",
+        "5",
+        "-F",
+        "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+        "-sdk",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-package-name",
+        "mac"
+      ],
+      "outputFileMapPath" : "/Users/sriram/code/personal/mac-android-sms-sync/mac/.build/arm64-apple-macosx/debug/SMSync.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/sriram/code/personal/mac-android-sms-sync/mac/.build/arm64-apple-macosx/debug/SMSync.build/ContentView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/sriram/code/personal/mac-android-sms-sync/mac/.build/arm64-apple-macosx/debug/SMSync.build/Conversation.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/sriram/code/personal/mac-android-sms-sync/mac/.build/arm64-apple-macosx/debug/SMSync.build/SMSDatabase.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/sriram/code/personal/mac-android-sms-sync/mac/.build/arm64-apple-macosx/debug/SMSync.build/SMSMessage.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/sriram/code/personal/mac-android-sms-sync/mac/.build/arm64-apple-macosx/debug/SMSync.build/SMSyncEntities.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/sriram/code/personal/mac-android-sms-sync/mac/.build/arm64-apple-macosx/debug/SMSync.build/SMSyncApp.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/sriram/code/personal/mac-android-sms-sync/mac/.build/arm64-apple-macosx/debug/SMSync.build/BonjourDiscovery.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/sriram/code/personal/mac-android-sms-sync/mac/.build/arm64-apple-macosx/debug/SMSync.build/ContactResolver.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/sriram/code/personal/mac-android-sms-sync/mac/.build/arm64-apple-macosx/debug/SMSync.build/PairingManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/sriram/code/personal/mac-android-sms-sync/mac/.build/arm64-apple-macosx/debug/SMSync.build/SMSSyncClient.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/sriram/code/personal/mac-android-sms-sync/mac/.build/arm64-apple-macosx/debug/SMSync.build/WebSocketManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/sriram/code/personal/mac-android-sms-sync/mac/.build/arm64-apple-macosx/debug/SMSync.build/ConversationListView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/sriram/code/personal/mac-android-sms-sync/mac/.build/arm64-apple-macosx/debug/SMSync.build/MainWindowView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/sriram/code/personal/mac-android-sms-sync/mac/.build/arm64-apple-macosx/debug/SMSync.build/MenuBarView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/sriram/code/personal/mac-android-sms-sync/mac/.build/arm64-apple-macosx/debug/SMSync.build/MessageThreadView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/sriram/code/personal/mac-android-sms-sync/mac/.build/arm64-apple-macosx/debug/SMSync.build/SettingsView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/sriram/code/personal/mac-android-sms-sync/mac/.build/arm64-apple-macosx/debug/Modules/SMSync.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/Users/sriram/code/personal/mac-android-sms-sync/mac/SMSync/ContentView.swift",
+        "/Users/sriram/code/personal/mac-android-sms-sync/mac/SMSync/Models/Conversation.swift",
+        "/Users/sriram/code/personal/mac-android-sms-sync/mac/SMSync/Models/SMSDatabase.swift",
+        "/Users/sriram/code/personal/mac-android-sms-sync/mac/SMSync/Models/SMSMessage.swift",
+        "/Users/sriram/code/personal/mac-android-sms-sync/mac/SMSync/Models/SMSyncEntities.swift",
+        "/Users/sriram/code/personal/mac-android-sms-sync/mac/SMSync/SMSyncApp.swift",
+        "/Users/sriram/code/personal/mac-android-sms-sync/mac/SMSync/Services/BonjourDiscovery.swift",
+        "/Users/sriram/code/personal/mac-android-sms-sync/mac/SMSync/Services/ContactResolver.swift",
+        "/Users/sriram/code/personal/mac-android-sms-sync/mac/SMSync/Services/PairingManager.swift",
+        "/Users/sriram/code/personal/mac-android-sms-sync/mac/SMSync/Services/SMSSyncClient.swift",
+        "/Users/sriram/code/personal/mac-android-sms-sync/mac/SMSync/Services/WebSocketManager.swift",
+        "/Users/sriram/code/personal/mac-android-sms-sync/mac/SMSync/Views/ConversationListView.swift",
+        "/Users/sriram/code/personal/mac-android-sms-sync/mac/SMSync/Views/MainWindowView.swift",
+        "/Users/sriram/code/personal/mac-android-sms-sync/mac/SMSync/Views/MenuBarView.swift",
+        "/Users/sriram/code/personal/mac-android-sms-sync/mac/SMSync/Views/MessageThreadView.swift",
+        "/Users/sriram/code/personal/mac-android-sms-sync/mac/SMSync/Views/SettingsView.swift"
+      ],
+      "tempsPath" : "/Users/sriram/code/personal/mac-android-sms-sync/mac/.build/arm64-apple-macosx/debug/SMSync.build",
+      "wholeModuleOptimization" : false
+    }
+  },
+  "swiftFrontendCommands" : {
+
+  },
+  "swiftTargetScanArgs" : {
+    "SMSync" : [
+      "/Library/Developer/CommandLineTools/usr/bin/swiftc",
+      "-module-name",
+      "SMSync",
+      "-package-name",
+      "mac",
+      "-incremental",
+      "-c",
+      "/Users/sriram/code/personal/mac-android-sms-sync/mac/SMSync/ContentView.swift",
+      "/Users/sriram/code/personal/mac-android-sms-sync/mac/SMSync/Models/Conversation.swift",
+      "/Users/sriram/code/personal/mac-android-sms-sync/mac/SMSync/Models/SMSDatabase.swift",
+      "/Users/sriram/code/personal/mac-android-sms-sync/mac/SMSync/Models/SMSMessage.swift",
+      "/Users/sriram/code/personal/mac-android-sms-sync/mac/SMSync/Models/SMSyncEntities.swift",
+      "/Users/sriram/code/personal/mac-android-sms-sync/mac/SMSync/SMSyncApp.swift",
+      "/Users/sriram/code/personal/mac-android-sms-sync/mac/SMSync/Services/BonjourDiscovery.swift",
+      "/Users/sriram/code/personal/mac-android-sms-sync/mac/SMSync/Services/ContactResolver.swift",
+      "/Users/sriram/code/personal/mac-android-sms-sync/mac/SMSync/Services/PairingManager.swift",
+      "/Users/sriram/code/personal/mac-android-sms-sync/mac/SMSync/Services/SMSSyncClient.swift",
+      "/Users/sriram/code/personal/mac-android-sms-sync/mac/SMSync/Services/WebSocketManager.swift",
+      "/Users/sriram/code/personal/mac-android-sms-sync/mac/SMSync/Views/ConversationListView.swift",
+      "/Users/sriram/code/personal/mac-android-sms-sync/mac/SMSync/Views/MainWindowView.swift",
+      "/Users/sriram/code/personal/mac-android-sms-sync/mac/SMSync/Views/MenuBarView.swift",
+      "/Users/sriram/code/personal/mac-android-sms-sync/mac/SMSync/Views/MessageThreadView.swift",
+      "/Users/sriram/code/personal/mac-android-sms-sync/mac/SMSync/Views/SettingsView.swift",
+      "-I",
+      "/Users/sriram/code/personal/mac-android-sms-sync/mac/.build/arm64-apple-macosx/debug/Modules",
+      "-target",
+      "arm64-apple-macosx13.0",
+      "-enable-batch-mode",
+      "-index-store-path",
+      "/Users/sriram/code/personal/mac-android-sms-sync/mac/.build/arm64-apple-macosx/debug/index/store",
+      "-Onone",
+      "-enable-testing",
+      "-j12",
+      "-DSWIFT_PACKAGE",
+      "-DDEBUG",
+      "-module-cache-path",
+      "/Users/sriram/code/personal/mac-android-sms-sync/mac/.build/arm64-apple-macosx/debug/ModuleCache",
+      "-parseable-output",
+      "-Xfrontend",
+      "-entry-point-function-name",
+      "-Xfrontend",
+      "SMSync_main",
+      "-swift-version",
+      "5",
+      "-F",
+      "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+      "-sdk",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-package-name",
+      "mac",
+      "-driver-use-frontend-path",
+      "/Library/Developer/CommandLineTools/usr/bin/swiftc"
+    ]
+  },
+  "targetDependencyMap" : {
+    "SMSync" : [
+
+    ]
+  },
+  "testDiscoveryCommands" : {
+
+  },
+  "testEntryPointCommands" : {
+
+  },
+  "writeCommands" : {
+    "/Users/sriram/code/personal/mac-android-sms-sync/mac/.build/arm64-apple-macosx/debug/SMSync-entitlement.plist" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<entitlement-plist>"
+        },
+        {
+          "kind" : "virtual",
+          "name" : "<com.apple.security.get-task-allow>"
+        }
+      ],
+      "outputFilePath" : "/Users/sriram/code/personal/mac-android-sms-sync/mac/.build/arm64-apple-macosx/debug/SMSync-entitlement.plist"
+    },
+    "/Users/sriram/code/personal/mac-android-sms-sync/mac/.build/arm64-apple-macosx/debug/SMSync.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/sriram/code/personal/mac-android-sms-sync/mac/SMSync/ContentView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/sriram/code/personal/mac-android-sms-sync/mac/SMSync/Models/Conversation.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/sriram/code/personal/mac-android-sms-sync/mac/SMSync/Models/SMSDatabase.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/sriram/code/personal/mac-android-sms-sync/mac/SMSync/Models/SMSMessage.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/sriram/code/personal/mac-android-sms-sync/mac/SMSync/Models/SMSyncEntities.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/sriram/code/personal/mac-android-sms-sync/mac/SMSync/SMSyncApp.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/sriram/code/personal/mac-android-sms-sync/mac/SMSync/Services/BonjourDiscovery.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/sriram/code/personal/mac-android-sms-sync/mac/SMSync/Services/ContactResolver.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/sriram/code/personal/mac-android-sms-sync/mac/SMSync/Services/PairingManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/sriram/code/personal/mac-android-sms-sync/mac/SMSync/Services/SMSSyncClient.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/sriram/code/personal/mac-android-sms-sync/mac/SMSync/Services/WebSocketManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/sriram/code/personal/mac-android-sms-sync/mac/SMSync/Views/ConversationListView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/sriram/code/personal/mac-android-sms-sync/mac/SMSync/Views/MainWindowView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/sriram/code/personal/mac-android-sms-sync/mac/SMSync/Views/MenuBarView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/sriram/code/personal/mac-android-sms-sync/mac/SMSync/Views/MessageThreadView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/sriram/code/personal/mac-android-sms-sync/mac/SMSync/Views/SettingsView.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/sriram/code/personal/mac-android-sms-sync/mac/.build/arm64-apple-macosx/debug/SMSync.build/sources"
+    },
+    "/Users/sriram/code/personal/mac-android-sms-sync/mac/.build/arm64-apple-macosx/debug/SMSync.product/Objects.LinkFileList" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<link-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/sriram/code/personal/mac-android-sms-sync/mac/.build/arm64-apple-macosx/debug/SMSync.build/BonjourDiscovery.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/sriram/code/personal/mac-android-sms-sync/mac/.build/arm64-apple-macosx/debug/SMSync.build/ContactResolver.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/sriram/code/personal/mac-android-sms-sync/mac/.build/arm64-apple-macosx/debug/SMSync.build/ContentView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/sriram/code/personal/mac-android-sms-sync/mac/.build/arm64-apple-macosx/debug/SMSync.build/Conversation.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/sriram/code/personal/mac-android-sms-sync/mac/.build/arm64-apple-macosx/debug/SMSync.build/ConversationListView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/sriram/code/personal/mac-android-sms-sync/mac/.build/arm64-apple-macosx/debug/SMSync.build/MainWindowView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/sriram/code/personal/mac-android-sms-sync/mac/.build/arm64-apple-macosx/debug/SMSync.build/MenuBarView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/sriram/code/personal/mac-android-sms-sync/mac/.build/arm64-apple-macosx/debug/SMSync.build/MessageThreadView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/sriram/code/personal/mac-android-sms-sync/mac/.build/arm64-apple-macosx/debug/SMSync.build/PairingManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/sriram/code/personal/mac-android-sms-sync/mac/.build/arm64-apple-macosx/debug/SMSync.build/SMSDatabase.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/sriram/code/personal/mac-android-sms-sync/mac/.build/arm64-apple-macosx/debug/SMSync.build/SMSMessage.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/sriram/code/personal/mac-android-sms-sync/mac/.build/arm64-apple-macosx/debug/SMSync.build/SMSSyncClient.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/sriram/code/personal/mac-android-sms-sync/mac/.build/arm64-apple-macosx/debug/SMSync.build/SMSyncApp.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/sriram/code/personal/mac-android-sms-sync/mac/.build/arm64-apple-macosx/debug/SMSync.build/SMSyncEntities.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/sriram/code/personal/mac-android-sms-sync/mac/.build/arm64-apple-macosx/debug/SMSync.build/SettingsView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/sriram/code/personal/mac-android-sms-sync/mac/.build/arm64-apple-macosx/debug/SMSync.build/WebSocketManager.swift.o"
+        }
+      ],
+      "outputFilePath" : "/Users/sriram/code/personal/mac-android-sms-sync/mac/.build/arm64-apple-macosx/debug/SMSync.product/Objects.LinkFileList"
+    },
+    "/Users/sriram/code/personal/mac-android-sms-sync/mac/.build/arm64-apple-macosx/debug/swift-version--1AB21518FC5DEDBE.txt" : {
+      "alwaysOutOfDate" : true,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<swift-get-version>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Library/Developer/CommandLineTools/usr/bin/swiftc"
+        }
+      ],
+      "outputFilePath" : "/Users/sriram/code/personal/mac-android-sms-sync/mac/.build/arm64-apple-macosx/debug/swift-version--1AB21518FC5DEDBE.txt"
+    }
+  }
+}

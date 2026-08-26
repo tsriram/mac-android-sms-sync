@@ -51,7 +51,7 @@ struct MessageBubble: View {
                 Text(message.body)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 8)
-                    .background(isOutgoing ? Color.blue : Color(.systemGray5))
+                    .background(isOutgoing ? Color.blue : Color(nsColor: .controlBackgroundColor))
                     .foregroundColor(isOutgoing ? .white : .primary)
                     .clipShape(RoundedRectangle(cornerRadius: 16))
 
@@ -64,15 +64,4 @@ struct MessageBubble: View {
             if !isOutgoing { Spacer() }
         }
     }
-}
-
-#Preview {
-    MessageThreadView(conversation: Conversation(
-        id: "1",
-        contactName: "Alice",
-        messages: [
-            SMSMessage(id: 1, address: "+15551234567", body: "Hey!", date: 1693000000000, type: 1, read: true),
-            SMSMessage(id: 2, address: "+15551234567", body: "Hi there!", date: 1693000060000, type: 2, read: true),
-        ]
-    ))
 }

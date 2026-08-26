@@ -12,29 +12,31 @@ class BonjourDiscovery: ObservableObject {
     }
 
     private var browser: NetServiceBrowser?
+    private var serviceDelegate: ServiceDelegate?
     private var foundServices: [NetService] = []
 
     func startDiscovery() {
         isScanning = true
         browser = NetServiceBrowser()
-        browser?.delegate = ServiceDelegate.shared
-        browser?.searchForServices(ofType: "_smsync._tcp.", inDomain: "")
-
-        ServiceDelegate.shared.onServiceFound = { [weak self] service in
+        serviceDelegate = ServiceDelegate()
+        serviceDelegate?.onServiceFound = { [weak self] service in
             DispatchQueue.main.async {
                 self?.handleServiceFound(service)
             }
         }
-        ServiceDelegate.shared.onServiceResolved = { [weak self] service in
+        serviceDelegate?.onServiceResolved = { [weak self] service in
             DispatchQueue.main.async {
                 self?.handleServiceResolved(service)
             }
         }
+        browser?.delegate = serviceDelegate
+        browser?.searchForServices(ofType: "_smsync._tcp.", inDomain: "")
     }
 
     func stopDiscovery() {
         browser?.stop()
         browser = nil
+        serviceDelegate = nil
         isScanning = false
         foundServices.removeAll()
     }
@@ -55,17 +57,23 @@ class BonjourDiscovery: ObservableObject {
     }
 }
 
-class ServiceDelegate: NSObject, NetServiceDelegate {
-    static let shared = ServiceDelegate()
-
+class ServiceDelegate: NSObject, NetServiceDelegate, NetServiceBrowserDelegate {
     var onServiceFound: ((NetService) -> Void)?
     var onServiceResolved: ((NetService) -> Void)?
 
-    func netServiceBrowser(_ browser: NetServiceBrowser, didFind service: NetService, moreComing Bool) {
+    func netServiceBrowser(_ browser: NetServiceBrowser, didFind service: NetService, moreComing: Bool) {
         onServiceFound?(service)
+    }
+
+    func netServiceBrowser(_ browser: NetServiceBrowser, didNotSearch errorDict: [String: NSNumber]) {
+        print("Bonjour search failed: \(errorDict)")
     }
 
     func netServiceDidResolveAddress(_ sender: NetService) {
         onServiceResolved?(sender)
+    }
+
+    func netService(_ sender: NetService, didNotResolve errorDict: [String: NSNumber]) {
+        print("Bonjour resolve failed: \(errorDict)")
     }
 }

@@ -62,10 +62,5 @@ struct MenuBarView: View {
     private func performSync() async {
         guard let device = discovery.discoveredDevice else { return }
         syncClient.configure(host: device.hostName, port: device.port)
-        // TODO: Trigger full sync
     }
-}
-
-#Preview {
-    MenuBarView()
 }

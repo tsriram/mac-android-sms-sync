@@ -1,4 +1,5 @@
 import Foundation
+import CommonCrypto
 import CoreData
 
 class SMSDatabase: ObservableObject {
@@ -86,7 +87,7 @@ class SMSDatabase: ObservableObject {
     }
 
     private func computeThreadHash(addresses: [String]) -> String {
-        let sorted = addresses.map { $0 }.sorted()
+        let sorted = addresses.sorted()
         let combined = sorted.joined(separator: ":")
         return combined.sha256()
     }
@@ -103,5 +104,3 @@ extension String {
         return hash.map { String(format: "%02x", $0) }.joined()
     }
 }
-
-import CommonCrypto

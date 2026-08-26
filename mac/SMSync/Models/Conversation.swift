@@ -1,9 +1,17 @@
 import Foundation
 
-struct Conversation: Identifiable {
+struct Conversation: Identifiable, Hashable {
     let id: String
     let contactName: String
     let messages: [SMSMessage]
+
+    static func == (lhs: Conversation, rhs: Conversation) -> Bool {
+        lhs.id == rhs.id
+    }
+
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+    }
 
     var lastMessage: SMSMessage? {
         messages.last

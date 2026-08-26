@@ -5,17 +5,13 @@ class PairingManager: ObservableObject {
     @Published var isPaired = false
     @Published var pairedDeviceName: String?
     @Published var showPairingSheet = false
-    @GeneratedPin: String?
+    @Published var generatedPin: String?
 
     private let serviceName = "com.smsync.pairing"
 
-    var generatedPin: String? {
-        _generatedPin
-    }
-
     func generatePin() -> String {
         let pin = String(format: "%06d", Int.random(in: 0...999999))
-        _generatedPin = pin
+        generatedPin = pin
         return pin
     }
 
@@ -25,11 +21,11 @@ class PairingManager: ObservableObject {
         isPaired = true
         pairedDeviceName = deviceName
         showPairingSheet = false
-        _generatedPin = nil
+        generatedPin = nil
     }
 
     func checkPairingStatus() {
-        if let token = loadFromKeychain(key: "deviceToken"),
+        if let _ = loadFromKeychain(key: "deviceToken"),
            let name = loadFromKeychain(key: "deviceName") {
             isPaired = true
             pairedDeviceName = name
@@ -41,7 +37,7 @@ class PairingManager: ObservableObject {
         deleteFromKeychain(key: "deviceName")
         isPaired = false
         pairedDeviceName = nil
-        _generatedPin = nil
+        generatedPin = nil
     }
 
     private func storeInKeychain(key: String, value: String) {
@@ -85,18 +81,5 @@ class PairingManager: ObservableObject {
             kSecAttrAccount as String: key
         ]
         SecItemDelete(query as CFDictionary)
-    }
-}
-
-@propertyWrapper
-struct GeneratedPin {
-    private var value: String?
-    var wrappedValue: String? {
-        get { value }
-        set { value = newValue }
-    }
-
-    init(wrappedValue: String? = nil) {
-        self.value = wrappedValue
     }
 }

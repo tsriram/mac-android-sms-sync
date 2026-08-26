@@ -17,7 +17,3 @@ struct MainWindowView: View {
         .frame(minWidth: 800, minHeight: 500)
     }
 }
-
-#Preview {
-    MainWindowView()
-}

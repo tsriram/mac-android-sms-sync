@@ -16,7 +16,6 @@ struct ConversationListView: View {
     }
 
     private var filteredConversations: [Conversation] {
-        // TODO: Filter from database
         []
     }
 }
@@ -52,8 +51,4 @@ struct ConversationRow: View {
         }
         .padding(.vertical, 4)
     }
-}
-
-#Preview {
-    ConversationListView(selectedConversation: .constant(nil))
 }

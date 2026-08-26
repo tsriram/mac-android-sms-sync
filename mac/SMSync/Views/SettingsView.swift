@@ -105,7 +105,7 @@ struct PairingSheet: View {
                 Text(pin)
                     .font(.system(size: 48, weight: .bold, design: .monospaced))
                     .padding()
-                    .background(Color(.controlBackgroundColor))
+                    .background(Color(nsColor: .controlBackgroundColor))
                     .clipShape(RoundedRectangle(cornerRadius: 12))
             }
 
@@ -123,8 +123,4 @@ struct PairingSheet: View {
             _ = pairingManager.generatePin()
         }
     }
-}
-
-#Preview {
-    SettingsView()
 }
