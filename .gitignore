@@ -29,6 +29,9 @@ xcuserdata/
 .LSOverride
 ._*
 
+# Swift Package Manager
+mac/.build/
+
 # JetBrains
 .idea/
 *.iml
