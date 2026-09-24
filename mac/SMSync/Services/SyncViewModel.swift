@@ -2,6 +2,8 @@ import Foundation
 import Combine
 
 class SyncViewModel: ObservableObject {
+    static let shared = SyncViewModel()
+
     @Published var connectionState: ConnectionState = .disconnected
     @Published var deviceName: String?
     @Published var lastSyncDate: Date?
@@ -104,6 +106,14 @@ class SyncViewModel: ObservableObject {
         }
     }
 
+    func cancelPairing() {
+        showPairingSheet = false
+        pairingError = nil
+        currentDevice = nil
+        connectionState = .discovering
+        startDiscovery()
+    }
+
     func completePairing(pin: String) {
         showPairingSheet = false
         Task {
@@ -155,16 +165,14 @@ class SyncViewModel: ObservableObject {
                     offset += limit
                 }
 
-                database.insertMessages(allMessages)
-
                 let count = allMessages.count
+                await database.insertMessages(allMessages)
+
                 await MainActor.run {
                     self.messagesSynced = count
                     self.lastSyncDate = Date()
                     self.connectionState = .connected
                 }
-
-                database.refreshConversations()
                 connectWebSocket(host: device.hostName, port: device.port)
             } catch {
                 await MainActor.run {
@@ -176,8 +184,13 @@ class SyncViewModel: ObservableObject {
 
     private func connectWebSocket(host: String, port: Int) {
         webSocketManager.connect(host: host, port: port) { [weak self] message in
-            self?.database.insertMessages([message])
-            self?.messagesSynced += 1
+            let database = self?.database
+            Task {
+                await database?.insertMessages([message])
+                await MainActor.run {
+                    self?.messagesSynced += 1
+                }
+            }
         }
     }
 

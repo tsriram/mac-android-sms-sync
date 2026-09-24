@@ -3,12 +3,11 @@ import SwiftUI
 @main
 struct SMSyncApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
-    @StateObject private var viewModel = SyncViewModel()
 
     var body: some Scene {
-        WindowGroup {
+        WindowGroup("SMSync") {
             ContentView()
-                .environmentObject(viewModel)
+                .environmentObject(SyncViewModel.shared)
         }
     }
 }
@@ -32,7 +31,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             button.target = self
         }
 
-        viewModel = SyncViewModel()
+        viewModel = SyncViewModel.shared
         viewModel?.startDiscovery()
         popover.contentViewController = NSHostingController(rootView: MenuBarView(viewModel: viewModel!))
         popover.behavior = .transient

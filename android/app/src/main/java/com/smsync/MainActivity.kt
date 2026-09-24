@@ -27,6 +27,7 @@ class MainActivity : AppCompatActivity() {
     private var mdnsAdvertiser: MdnsAdvertiser? = null
     private var contentObserver: SmsContentObserver? = null
     private var authManager: AuthManager? = null
+    private var wifiLock: android.net.wifi.WifiManager.WifiLock? = null
 
     companion object {
         private const val SMS_PERMISSION_CODE = 1001
@@ -196,6 +197,7 @@ class MainActivity : AppCompatActivity() {
                 true,
                 contentObserver!!
             )
+            acquireWifiLock()
             val ip = getLocalIpAddress()
             serverStatusText.text = if (ip != null) {
                 "Server: Running at $ip:8484"
@@ -230,6 +232,17 @@ class MainActivity : AppCompatActivity() {
         return null
     }
 
+    private fun acquireWifiLock() {
+        try {
+            val wifiManager = getSystemService(android.content.Context.WIFI_SERVICE) as android.net.wifi.WifiManager
+            wifiLock = wifiManager.createWifiLock(android.net.wifi.WifiManager.WIFI_MODE_FULL_HIGH_PERF, "smsync")
+            wifiLock?.setReferenceCounted(false)
+            wifiLock?.acquire()
+        } catch (e: Exception) {
+            // Non-fatal; Wi-Fi may sleep and connections will just be slower
+        }
+    }
+
     override fun onDestroy() {
         super.onDestroy()
         contentObserver?.let {
@@ -237,5 +250,11 @@ class MainActivity : AppCompatActivity() {
         }
         mdnsAdvertiser?.deregister()
         localServer?.stop()
+        wifiLock?.let {
+            if (it.isHeld) {
+                try { it.release() } catch (e: Exception) { /* ignore */ }
+            }
+        }
+        wifiLock = null
     }
 }

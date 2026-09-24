@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct ContentView: View {
-    @StateObject private var viewModel = SyncViewModel()
+    @EnvironmentObject private var viewModel: SyncViewModel
 
     var body: some View {
         MainWindowView(viewModel: viewModel)
@@ -12,12 +12,6 @@ struct ContentView: View {
                 Button("OK") { viewModel.errorMessage = nil }
             } message: {
                 Text(viewModel.errorMessage ?? "")
-            }
-            .onAppear {
-                viewModel.startDiscovery()
-            }
-            .onDisappear {
-                viewModel.disconnect()
             }
     }
 }

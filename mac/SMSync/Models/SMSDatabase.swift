@@ -75,16 +75,17 @@ class SMSDatabase: ObservableObject {
         container.viewContext
     }
 
-    func insertMessages(_ messages: [SMSSyncClient.SMSMessageJSON]) {
+    func insertMessages(_ messages: [SMSSyncClient.SMSMessageJSON]) async {
         let context = container.newBackgroundContext()
-        context.perform { [weak self] in
-            for messageData in messages {
-                let fetchRequest: NSFetchRequest<SMSMessageEntity> = SMSMessageEntity.fetchRequest()
-                fetchRequest.predicate = NSPredicate(format: "id == %lld", messageData.id)
+        await context.perform {
+            let fetchRequest: NSFetchRequest<NSFetchRequestResult> = NSFetchRequest(entityName: "SMSMessageEntity")
+            fetchRequest.resultType = .dictionaryResultType
+            fetchRequest.propertiesToFetch = ["id"]
+            let existingIDs = Set(((try? context.fetch(fetchRequest)) as? [[String: Any]])?
+                    .compactMap { $0["id"] as? NSNumber }
+                    .compactMap { $0.int64Value } ?? [])
 
-                let exists = (try? context.count(for: fetchRequest)) ?? 0 > 0
-                guard !exists else { continue }
-
+            for messageData in messages where !existingIDs.contains(messageData.id) {
                 let entity = SMSMessageEntity(context: context)
                 entity.id = messageData.id
                 entity.address = messageData.address
@@ -92,14 +93,12 @@ class SMSDatabase: ObservableObject {
                 entity.date = Date(timeIntervalSince1970: TimeInterval(messageData.date / 1000))
                 entity.type = Int16(messageData.type)
                 entity.read = messageData.read
-                entity.threadHash = self?.computeThreadHash(addresses: [messageData.address])
+                entity.threadHash = self.computeThreadHash(addresses: [messageData.address])
             }
 
             try? context.save()
-            DispatchQueue.main.async {
-                self?.refreshConversations()
-            }
         }
+        await MainActor.run { refreshConversations() }
     }
 
     func fetchConversations() -> [Conversation] {

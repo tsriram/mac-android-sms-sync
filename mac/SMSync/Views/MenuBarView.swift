@@ -41,6 +41,11 @@ struct MenuBarView: View {
 
             Divider()
 
+            if viewModel.showPairingSheet {
+                MenuBarPairingView(viewModel: viewModel)
+                Divider()
+            }
+
             DisclosureGroup("Connect manually") {
                 HStack {
                     TextField("Phone IP (e.g. 192.168.1.20)", text: $manualIP)
@@ -83,7 +88,52 @@ struct MenuBarView: View {
         .frame(width: 280)
     }
 
-    private var statusColor: Color {
+    struct MenuBarPairingView: View {
+    @ObservedObject var viewModel: SyncViewModel
+    @State private var enteredPin = ""
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Pair with phone")
+                .font(.headline)
+
+            if let error = viewModel.pairingError {
+                Text(error)
+                    .foregroundColor(.red)
+                    .font(.caption)
+            }
+
+            Text("Enter the 6-digit PIN shown on your phone:")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            HStack {
+                TextField("PIN", text: $enteredPin)
+                    .textFieldStyle(.roundedBorder)
+                    .font(.system(size: 16, weight: .bold, design: .monospaced))
+                    .multilineTextAlignment(.center)
+                    .onChange(of: enteredPin) { newValue in
+                        enteredPin = String(newValue.filter { $0.isNumber }.prefix(6))
+                    }
+                Button("Pair") {
+                    viewModel.completePairing(pin: enteredPin)
+                }
+                .disabled(enteredPin.count != 6)
+            }
+
+            Text("Keep SMSync open on your phone. PIN expires in 2 minutes.")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+
+            Button("Cancel pairing") {
+                viewModel.cancelPairing()
+            }
+            .font(.caption)
+        }
+    }
+}
+
+private var statusColor: Color {
         switch viewModel.connectionState {
         case .connected, .syncing: return .green
         case .discovering, .discovered: return .orange
