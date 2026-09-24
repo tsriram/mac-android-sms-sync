@@ -13,7 +13,9 @@ class LocalServer(
     private val smsReader: SmsReader,
     private val contactReader: ContactReader,
     private val authManager: AuthManager,
-    private val onClientConnected: () -> Unit
+    private val onClientConnected: () -> Unit,
+    private val onClientDisconnected: () -> Unit = {},
+    private val onSyncPerformed: () -> Unit = {}
 ) : NanoWSD(8484) {
 
     private val wsClients = mutableSetOf<SmsWebSocket>()
@@ -106,6 +108,7 @@ class LocalServer(
             put("total", smsReader.getTotalCount())
             put("hasMore", offset + limit < smsReader.getTotalCount())
         }
+        onSyncPerformed()
         return jsonResponse(json)
     }
 
@@ -117,6 +120,7 @@ class LocalServer(
                 put("number", contact.number)
             })
         }
+        onSyncPerformed()
         return jsonResponse(JSONObject().apply {
             put("contacts", contactsArray)
             put("total", contactsArray.length())
@@ -168,12 +172,14 @@ class LocalServer(
             initiatedByRemote: Boolean
         ) {
             wsClients.remove(this)
+            handler.post { onClientDisconnected() }
         }
 
         override fun onPong(frame: NanoWSD.WebSocketFrame?) {}
 
         override fun onException(exception: IOException) {
             wsClients.remove(this)
+            handler.post { onClientDisconnected() }
         }
 
         override fun onMessage(message: NanoWSD.WebSocketFrame?) {

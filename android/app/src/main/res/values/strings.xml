@@ -1,4 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">SMSync</string>
+    <string name="permission_granted">SMS permission granted</string>
+    <string name="permission_missing">SMS permission required</string>
+    <string name="grant_sms_permission">Grant SMS Permission</string>
+    <string name="set_default_sms">Set as default SMS app</string>
+    <string name="show_pairing_pin">Show Pairing PIN</string>
+    <string name="status_server_stopped">Server: Stopped</string>
+    <string name="status_waiting_connection">Server: Waiting for connection</string>
+    <string name="status_client_connected">Server: Client connected</string>
+    <string name="status_synced">Server: Synced</string>
+    <string name="status_failed">Server: Failed to start</string>
 </resources>

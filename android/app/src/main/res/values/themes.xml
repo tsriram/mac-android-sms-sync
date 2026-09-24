@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.SMSync" parent="Theme.MaterialComponents.Light.DarkActionBar">
+        <item name="android:statusBarColor">@color/brand_blue</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="colorPrimary">@color/brand_blue</item>
+        <item name="colorPrimaryDark">@color/brand_blue</item>
+        <item name="colorSecondary">@color/brand_blue_light</item>
+        <item name="colorOnPrimary">@android:color/white</item>
+    </style>
+</resources>

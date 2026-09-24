@@ -1,123 +1,265 @@
 package com.smsync
 
 import android.Manifest
+import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
+import android.graphics.Color
+import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.provider.Telephony
-import android.widget.TextView
-import android.widget.LinearLayout
 import android.widget.Button
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import com.google.android.material.card.MaterialCardView
+import com.google.android.material.button.MaterialButtonToggleGroup
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var statusText: TextView
-    private lateinit var permissionButton: Button
-    private lateinit var defaultSmsButton: Button
-    private lateinit var serverStatusText: TextView
-    private lateinit var pinText: TextView
+    private lateinit var permissionActions: MaterialButtonToggleGroup
+    private lateinit var btnGrantSms: Button
+    private lateinit var btnDefaultSms: Button
+    private lateinit var tvConnectionState: TextView
+    private lateinit var tvServerStatus: TextView
+    private lateinit var statusDot: android.view.View
+    private lateinit var tvSmsCount: TextView
+    private lateinit var tvContactCount: TextView
+    private lateinit var tvLastSync: TextView
+    private lateinit var cardPin: MaterialCardView
+    private lateinit var tvPin: TextView
+    private lateinit var tvPinHint: TextView
 
-    private var smsReader: SmsReader? = null
-    private var contactReader: ContactReader? = null
-    private var localServer: LocalServer? = null
-    private var mdnsAdvertiser: MdnsAdvertiser? = null
-    private var contentObserver: SmsContentObserver? = null
     private var authManager: AuthManager? = null
-    private var wifiLock: android.net.wifi.WifiManager.WifiLock? = null
+    private var receiverRegistered = false
+    private val uiHandler = Handler(Looper.getMainLooper())
+
+    private val statusReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            val status = intent.getStringExtra(SmsSyncService.EXTRA_SERVER_STATUS)
+            if (status != null) {
+                tvServerStatus.text = status
+            }
+            refreshStatusUi()
+        }
+    }
+
+    private val refreshRunnable = object : Runnable {
+        override fun run() {
+            refreshStatusUi()
+            refreshCounts()
+            uiHandler.postDelayed(this, 3_000)
+        }
+    }
 
     companion object {
         private const val SMS_PERMISSION_CODE = 1001
         private const val CONTACTS_PERMISSION_CODE = 1002
+        private const val NOTIFICATIONS_PERMISSION_CODE = 1003
         private const val PREFS_NAME = "smsync_prefs"
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
 
-        val layout = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(48, 48, 48, 48)
-        }
+        permissionActions = findViewById(R.id.permission_actions)
+        btnGrantSms = findViewById(R.id.btn_grant_sms)
+        btnDefaultSms = findViewById(R.id.btn_default_sms)
+        tvConnectionState = findViewById(R.id.tv_connection_state)
+        tvServerStatus = findViewById(R.id.tv_server_status)
+        statusDot = findViewById(R.id.status_dot)
+        tvSmsCount = findViewById(R.id.tv_sms_count)
+        tvContactCount = findViewById(R.id.tv_contact_count)
+        tvLastSync = findViewById(R.id.tv_last_sync)
+        cardPin = findViewById(R.id.card_pin)
+        tvPin = findViewById(R.id.tv_pin)
+        tvPinHint = findViewById(R.id.tv_pin_hint)
 
-        val titleText = TextView(this).apply {
-            text = "SMSync"
-            textSize = 28f
-            setPadding(0, 0, 0, 32)
-        }
+        btnGrantSms.setOnClickListener { requestSmsPermission() }
+        btnDefaultSms.setOnClickListener { requestDefaultSmsApp() }
+        findViewById<Button>(R.id.btn_pair_pin).setOnClickListener { showPairingPin() }
 
-        statusText = TextView(this).apply {
-            text = "Checking permissions..."
-            textSize = 16f
-            setPadding(0, 0, 0, 16)
-        }
-
-        permissionButton = Button(this).apply {
-            text = "Grant SMS Permission"
-            setOnClickListener { requestSmsPermission() }
-        }
-
-        defaultSmsButton = Button(this).apply {
-            text = "Set as default SMS app (recommended on Android 13+)"
-            setOnClickListener { requestDefaultSmsApp() }
-        }
-
-        serverStatusText = TextView(this).apply {
-            text = "Server: Stopped"
-            textSize = 14f
-            setPadding(0, 0, 0, 16)
-        }
-
-        val pairButton = Button(this).apply {
-            text = "Show Pairing PIN"
-            setOnClickListener { showPairingPin() }
-        }
-
-        pinText = TextView(this).apply {
-            text = "No PIN"
-            textSize = 32f
-            typeface = android.graphics.Typeface.MONOSPACE
-            gravity = android.view.Gravity.CENTER
-            setPadding(0, 8, 0, 0)
-            visibility = android.view.View.GONE
-        }
-
-        layout.addView(titleText)
-        layout.addView(statusText)
-        layout.addView(permissionButton)
-        layout.addView(defaultSmsButton)
-        layout.addView(serverStatusText)
-        layout.addView(pairButton)
-        layout.addView(pinText)
-
-        setContentView(layout)
-
+        registerStatusReceiver()
         checkSmsPermission()
+        refreshStatusUi()
+        refreshCounts()
+    }
+
+    override fun onStart() {
+        super.onStart()
+        uiHandler.post(refreshRunnable)
+    }
+
+    override fun onStop() {
+        super.onStop()
+        uiHandler.removeCallbacks(refreshRunnable)
     }
 
     override fun onResume() {
         super.onResume()
+        refreshStatusUi()
         checkSmsPermission()
+    }
+
+    override fun onDestroy() {
+        uiHandler.removeCallbacks(refreshRunnable)
+        if (receiverRegistered) {
+            unregisterReceiver(statusReceiver)
+            receiverRegistered = false
+        }
+        super.onDestroy()
+    }
+
+    private fun registerStatusReceiver() {
+        if (receiverRegistered) return
+        val filter = IntentFilter(SmsSyncService.ACTION_STATUS)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(statusReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
+        } else {
+            registerReceiver(statusReceiver, filter)
+        }
+        receiverRegistered = true
     }
 
     private fun checkSmsPermission() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_SMS)
             == PackageManager.PERMISSION_GRANTED
         ) {
-            statusText.text = "SMS permission granted"
-            permissionButton.visibility = android.view.View.GONE
-            defaultSmsButton.visibility = android.view.View.GONE
-            if (smsReader == null) {
-                startServices()
+            permissionActions.visibility = android.view.View.GONE
+            requestNotificationsPermissionIfNeeded()
+            requestContactsPermission()
+            startSyncService()
+        } else {
+            permissionActions.visibility = android.view.View.VISIBLE
+            tvConnectionState.text = "SMS permission required"
+            tvServerStatus.text = getString(R.string.status_server_stopped)
+            setStatusDot(Color.rgb(0xC6, 0x28, 0x28))
+        }
+    }
+
+    private fun refreshStatusUi() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_SMS)
+            != PackageManager.PERMISSION_GRANTED
+        ) {
+            permissionActions.visibility = android.view.View.VISIBLE
+            tvConnectionState.text = "SMS permission required"
+            tvServerStatus.text = getString(R.string.status_server_stopped)
+            setStatusDot(Color.rgb(0xC6, 0x28, 0x28))
+            return
+        }
+
+        permissionActions.visibility = android.view.View.GONE
+
+        val connected = SmsSyncService.isClientConnected
+        val syncing = connected && SmsSyncService.lastSyncAt > 0L
+
+        tvConnectionState.text = when {
+            syncing -> "Synced with Mac"
+            connected -> "Connected to Mac"
+            else -> "Waiting for Mac…"
+        }
+        setStatusDot(
+            when {
+                syncing -> Color.rgb(0x2E, 0x7D, 0x32)   // green
+                connected -> Color.rgb(0xF9, 0xA8, 0x25) // amber
+                else -> Color.rgb(0x61, 0x61, 0x61)      // gray
+            }
+        )
+
+        tvServerStatus.text = SmsSyncService.serverStatus
+        updateLastSyncLabel()
+    }
+
+    private fun refreshCounts() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_SMS)
+            != PackageManager.PERMISSION_GRANTED
+        ) {
+            return
+        }
+        try {
+            val smsReader = SmsReader(contentResolver)
+            tvSmsCount.text = formatCount(smsReader.getTotalCount())
+        } catch (e: Exception) {
+            tvSmsCount.text = "–"
+        }
+
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CONTACTS)
+            == PackageManager.PERMISSION_GRANTED
+        ) {
+            try {
+                val contactReader = ContactReader(contentResolver)
+                tvContactCount.text = formatCount(contactReader.getAllContacts().size)
+            } catch (e: Exception) {
+                tvContactCount.text = "–"
             }
         } else {
-            statusText.text = "SMS permission not granted"
-            permissionButton.visibility = android.view.View.VISIBLE
-            defaultSmsButton.visibility = android.view.View.VISIBLE
+            tvContactCount.text = "–"
+        }
+
+        updateLastSyncLabel()
+    }
+
+    private fun updateLastSyncLabel() {
+        tvLastSync.text = when {
+            SmsSyncService.lastSyncAt <= 0L -> "Never"
+            else -> {
+                val diff = System.currentTimeMillis() - SmsSyncService.lastSyncAt
+                when {
+                    diff < 60_000L -> "Just now"
+                    diff < 3_600_000L -> "${diff / 60_000L}m ago"
+                    diff < 86_400_000L -> "${diff / 3_600_000L}h ago"
+                    else -> SimpleDateFormat("MMM d", Locale.getDefault())
+                        .format(Date(SmsSyncService.lastSyncAt))
+                }
+            }
+        }
+    }
+
+    private fun formatCount(count: Int): String {
+        return if (count >= 1_000_000) {
+            String.format("%.1fM", count / 1_000_000.0)
+        } else if (count >= 10_000) {
+            String.format("%.1fk", count / 1_000.0)
+        } else {
+            count.toString()
+        }
+    }
+
+    private fun setStatusDot(color: Int) {
+        statusDot.background.setTint(color)
+    }
+
+    private fun startSyncService() {
+        val intent = Intent(this, SmsSyncService::class.java)
+            .setAction(SmsSyncService.ACTION_START)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(intent)
+        } else {
+            startService(intent)
+        }
+    }
+
+    private fun requestNotificationsPermissionIfNeeded() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+            != PackageManager.PERMISSION_GRANTED
+        ) {
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+                NOTIFICATIONS_PERMISSION_CODE
+            )
         }
     }
 
@@ -129,12 +271,13 @@ class MainActivity : AppCompatActivity() {
 
     private fun showPairingPin() {
         val manager = authManager ?: run {
-            Toast.makeText(this, "Start services first", Toast.LENGTH_SHORT).show()
-            return
+            val prefs: SharedPreferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+            AuthManager(prefs).also { authManager = it }
         }
         val pin = manager.getActivePin() ?: manager.generatePin()
-        pinText.text = pin
-        pinText.visibility = android.view.View.VISIBLE
+        tvPin.text = pin
+        cardPin.visibility = android.view.View.VISIBLE
+        tvPinHint.text = "Open SMSync on your Mac and enter this PIN to pair."
         Toast.makeText(
             this,
             "Enter this PIN in the SMSync Mac app. Expires in 2 minutes.",
@@ -172,106 +315,16 @@ class MainActivity : AppCompatActivity() {
             if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 checkSmsPermission()
             } else {
-                statusText.text = "SMS permission denied"
                 Toast.makeText(this, "SMS permission is required", Toast.LENGTH_LONG).show()
+                checkSmsPermission()
             }
+        } else if (requestCode == CONTACTS_PERMISSION_CODE) {
+            val granted = grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED
+            Toast.makeText(
+                this,
+                if (granted) "Contacts permission granted" else "Contacts permission not granted (names will be missing)",
+                Toast.LENGTH_LONG
+            ).show()
         }
-    }
-
-    private fun startServices() {
-        smsReader = SmsReader(contentResolver)
-        contactReader = ContactReader(contentResolver)
-        val prefs: SharedPreferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
-        authManager = AuthManager(prefs)
-
-        localServer = LocalServer(
-            smsReader = smsReader!!,
-            contactReader = contactReader!!,
-            authManager = authManager!!,
-            onClientConnected = {
-                runOnUiThread {
-                    serverStatusText.text = "Server: Client connected"
-                }
-            }
-        )
-
-        mdnsAdvertiser = MdnsAdvertiser(this)
-
-        contentObserver = SmsContentObserver(
-            smsReader = smsReader!!,
-            onNewMessage = { message ->
-                localServer?.broadcastMessage(message)
-            }
-        )
-
-        try {
-            localServer?.startServer()
-            mdnsAdvertiser?.register()
-            contentObserver?.setInitialTimestamp(smsReader?.getLatestTimestamp() ?: 0L)
-            contentResolver.registerContentObserver(
-                Telephony.Sms.CONTENT_URI,
-                true,
-                contentObserver!!
-            )
-            acquireWifiLock()
-            requestContactsPermission()
-            val ip = getLocalIpAddress()
-            serverStatusText.text = if (ip != null) {
-                "Server: Running at $ip:8484"
-            } else {
-                "Server: Running on port 8484 (IP unknown)"
-            }
-            Toast.makeText(this, "SMSync server started", Toast.LENGTH_SHORT).show()
-        } catch (e: Exception) {
-            serverStatusText.text = "Server: Failed to start"
-            Toast.makeText(this, "Failed to start server: ${e.message}", Toast.LENGTH_LONG).show()
-        }
-    }
-
-    private fun getLocalIpAddress(): String? {
-        try {
-            val interfaces = java.net.NetworkInterface.getNetworkInterfaces() ?: return null
-            for (intf in interfaces) {
-                if (intf.name.startsWith("wlan") || intf.isUp) {
-                    for (addr in intf.inetAddresses) {
-                        val inet4 = addr as? java.net.Inet4Address ?: continue
-                        if (inet4.isLoopbackAddress) continue
-                        val ip = inet4.hostAddress ?: continue
-                        if (ip.startsWith("192.168.") || ip.startsWith("10.") || ip.startsWith("172.")) {
-                            return ip
-                        }
-                    }
-                }
-            }
-        } catch (e: Exception) {
-            // ignore
-        }
-        return null
-    }
-
-    private fun acquireWifiLock() {
-        try {
-            val wifiManager = getSystemService(android.content.Context.WIFI_SERVICE) as android.net.wifi.WifiManager
-            wifiLock = wifiManager.createWifiLock(android.net.wifi.WifiManager.WIFI_MODE_FULL_HIGH_PERF, "smsync")
-            wifiLock?.setReferenceCounted(false)
-            wifiLock?.acquire()
-        } catch (e: Exception) {
-            // Non-fatal; Wi-Fi may sleep and connections will just be slower
-        }
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        contentObserver?.let {
-            contentResolver.unregisterContentObserver(it)
-        }
-        mdnsAdvertiser?.deregister()
-        localServer?.stop()
-        wifiLock?.let {
-            if (it.isHeld) {
-                try { it.release() } catch (e: Exception) { /* ignore */ }
-            }
-        }
-        wifiLock = null
     }
 }
