@@ -1,5 +1,4 @@
 import Foundation
-import Security
 
 class PairingManager: ObservableObject {
     @Published var isPaired = false
@@ -7,7 +6,11 @@ class PairingManager: ObservableObject {
     @Published var showPairingSheet = false
     @Published var generatedPin: String?
 
-    private let serviceName = "com.smsync.pairing"
+    private let defaults = UserDefaults.standard
+    private enum Keys {
+        static let deviceToken = "pairing.deviceToken"
+        static let deviceName = "pairing.deviceName"
+    }
 
     func generatePin() -> String {
         let pin = String(format: "%06d", Int.random(in: 0...999999))
@@ -16,8 +19,8 @@ class PairingManager: ObservableObject {
     }
 
     func completePairing(deviceToken: String, deviceName: String) {
-        storeInKeychain(key: "deviceToken", value: deviceToken)
-        storeInKeychain(key: "deviceName", value: deviceName)
+        defaults.set(deviceToken, forKey: Keys.deviceToken)
+        defaults.set(deviceName, forKey: Keys.deviceName)
         isPaired = true
         pairedDeviceName = deviceName
         showPairingSheet = false
@@ -25,61 +28,18 @@ class PairingManager: ObservableObject {
     }
 
     func checkPairingStatus() {
-        if let _ = loadFromKeychain(key: "deviceToken"),
-           let name = loadFromKeychain(key: "deviceName") {
+        if defaults.string(forKey: Keys.deviceToken) != nil,
+           let name = defaults.string(forKey: Keys.deviceName) {
             isPaired = true
             pairedDeviceName = name
         }
     }
 
     func unpair() {
-        deleteFromKeychain(key: "deviceToken")
-        deleteFromKeychain(key: "deviceName")
+        defaults.removeObject(forKey: Keys.deviceToken)
+        defaults.removeObject(forKey: Keys.deviceName)
         isPaired = false
         pairedDeviceName = nil
         generatedPin = nil
-    }
-
-    private func storeInKeychain(key: String, value: String) {
-        let data = value.data(using: .utf8)!
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: serviceName,
-            kSecAttrAccount as String: key
-        ]
-        SecItemDelete(query as CFDictionary)
-
-        let addQuery: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: serviceName,
-            kSecAttrAccount as String: key,
-            kSecValueData as String: data
-        ]
-        SecItemAdd(addQuery as CFDictionary, nil)
-    }
-
-    private func loadFromKeychain(key: String) -> String? {
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: serviceName,
-            kSecAttrAccount as String: key,
-            kSecReturnData as String: true,
-            kSecMatchLimit as String: kSecMatchLimitOne
-        ]
-
-        var result: AnyObject?
-        let status = SecItemCopyMatching(query as CFDictionary, &result)
-
-        guard status == errSecSuccess, let data = result as? Data else { return nil }
-        return String(data: data, encoding: .utf8)
-    }
-
-    private func deleteFromKeychain(key: String) {
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: serviceName,
-            kSecAttrAccount as String: key
-        ]
-        SecItemDelete(query as CFDictionary)
     }
 }

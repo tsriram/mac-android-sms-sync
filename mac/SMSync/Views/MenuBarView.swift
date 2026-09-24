@@ -3,6 +3,7 @@ import SwiftUI
 struct MenuBarView: View {
     @ObservedObject var viewModel: SyncViewModel
     @State private var manualIP = ""
+    @State private var confirmClearCache = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -70,6 +71,10 @@ struct MenuBarView: View {
                 }
             }
 
+            Button("Clear Local Cache…") {
+                confirmClearCache = true
+            }
+
             Button("Settings...") {
                 NSApp.activate(ignoringOtherApps: true)
                 if let window = NSApp.windows.first(where: { $0.title == "SMSync" }) {
@@ -86,6 +91,15 @@ struct MenuBarView: View {
         }
         .padding(16)
         .frame(width: 280)
+        .alert("Clear Local Cache?", isPresented: $confirmClearCache) {
+            Button("Clear Cache", role: .destructive) {
+                SMSDatabase.shared.clearCache()
+                viewModel.resetAfterCacheClear()
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("All synced SMS data will be deleted from this Mac and re-fetched on the next Sync. Your phone is untouched.")
+        }
     }
 
     struct MenuBarPairingView: View {

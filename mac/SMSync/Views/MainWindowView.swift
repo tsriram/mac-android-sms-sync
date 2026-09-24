@@ -7,18 +7,41 @@ struct MainWindowView: View {
     var body: some View {
         NavigationSplitView {
             VStack(spacing: 0) {
-                ConnectionBanner(viewModel: viewModel)
                 ConversationListView(selectedConversation: $selectedConversation, viewModel: viewModel)
             }
+            .frame(minWidth: 280, idealWidth: 320)
+            .background(.bar)
         } detail: {
             if let conversation = selectedConversation {
                 MessageThreadView(conversation: conversation)
+                    .id(conversation.id)
             } else {
-                Text("Select a conversation")
-                    .foregroundStyle(.secondary)
+                EmptyConversationView()
             }
         }
         .frame(minWidth: 800, minHeight: 500)
+    }
+}
+
+struct EmptyConversationView: View {
+    var body: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "message.fill")
+                .font(.system(size: 56))
+                .foregroundStyle(.secondary)
+            Text("No Conversation Selected")
+                .font(.title3)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(
+            LinearGradient(
+                colors: [Color(nsColor: .textBackgroundColor),
+                         Color(nsColor: .windowBackgroundColor)],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+        )
     }
 }
 

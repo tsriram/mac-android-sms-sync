@@ -35,6 +35,16 @@ class SMSSyncClient: ObservableObject {
         let error: String?
     }
 
+    struct ContactJSON: Codable {
+        let name: String
+        let number: String
+    }
+
+    struct ContactsResponse: Codable {
+        let contacts: [ContactJSON]
+        let total: Int
+    }
+
     func configure(host: String, port: Int) {
         baseURL = "http://\(host):\(port)"
     }
@@ -69,6 +79,14 @@ class SMSSyncClient: ObservableObject {
         }
         let (data, _) = try await session.data(from: url)
         return try JSONDecoder().decode(SMSResponse.self, from: data)
+    }
+
+    func fetchContacts() async throws -> ContactsResponse {
+        guard let url = URL(string: "\(baseURL!)/api/contacts") else {
+            throw SyncError.invalidURL
+        }
+        let (data, _) = try await session.data(from: url)
+        return try JSONDecoder().decode(ContactsResponse.self, from: data)
     }
 
     enum SyncError: Error {

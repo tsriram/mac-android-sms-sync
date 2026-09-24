@@ -11,6 +11,7 @@ import java.io.IOException
 
 class LocalServer(
     private val smsReader: SmsReader,
+    private val contactReader: ContactReader,
     private val authManager: AuthManager,
     private val onClientConnected: () -> Unit
 ) : NanoWSD(8484) {
@@ -27,6 +28,7 @@ class LocalServer(
             uri == "/api/pair/init" -> handlePairInit()
             uri == "/api/pair" -> handlePair(params)
             uri == "/api/sms" -> handleSms(params)
+            uri == "/api/contacts" -> handleContacts()
             uri == "/ws" -> super.serve(session)
             else -> newFixedLengthResponse(Response.Status.NOT_FOUND, "text/plain", "Not found")
         }
@@ -105,6 +107,20 @@ class LocalServer(
             put("hasMore", offset + limit < smsReader.getTotalCount())
         }
         return jsonResponse(json)
+    }
+
+    private fun handleContacts(): NanoHTTPD.Response {
+        val contactsArray = JSONArray()
+        contactReader.getAllContacts().forEach { contact ->
+            contactsArray.put(JSONObject().apply {
+                put("name", contact.name)
+                put("number", contact.number)
+            })
+        }
+        return jsonResponse(JSONObject().apply {
+            put("contacts", contactsArray)
+            put("total", contactsArray.length())
+        })
     }
 
     private fun jsonResponse(json: JSONObject, status: Response.Status = Response.Status.OK): NanoHTTPD.Response {

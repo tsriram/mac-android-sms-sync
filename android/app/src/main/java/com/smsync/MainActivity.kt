@@ -23,6 +23,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var pinText: TextView
 
     private var smsReader: SmsReader? = null
+    private var contactReader: ContactReader? = null
     private var localServer: LocalServer? = null
     private var mdnsAdvertiser: MdnsAdvertiser? = null
     private var contentObserver: SmsContentObserver? = null
@@ -31,6 +32,7 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         private const val SMS_PERMISSION_CODE = 1001
+        private const val CONTACTS_PERMISSION_CODE = 1002
         private const val PREFS_NAME = "smsync_prefs"
     }
 
@@ -148,6 +150,18 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
+    private fun requestContactsPermission() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CONTACTS)
+            != PackageManager.PERMISSION_GRANTED
+        ) {
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(Manifest.permission.READ_CONTACTS),
+                CONTACTS_PERMISSION_CODE
+            )
+        }
+    }
+
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<out String>,
@@ -166,11 +180,13 @@ class MainActivity : AppCompatActivity() {
 
     private fun startServices() {
         smsReader = SmsReader(contentResolver)
+        contactReader = ContactReader(contentResolver)
         val prefs: SharedPreferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
         authManager = AuthManager(prefs)
 
         localServer = LocalServer(
             smsReader = smsReader!!,
+            contactReader = contactReader!!,
             authManager = authManager!!,
             onClientConnected = {
                 runOnUiThread {
@@ -198,6 +214,7 @@ class MainActivity : AppCompatActivity() {
                 contentObserver!!
             )
             acquireWifiLock()
+            requestContactsPermission()
             val ip = getLocalIpAddress()
             serverStatusText.text = if (ip != null) {
                 "Server: Running at $ip:8484"

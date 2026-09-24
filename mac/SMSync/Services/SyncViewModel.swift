@@ -168,6 +168,12 @@ class SyncViewModel: ObservableObject {
                 let count = allMessages.count
                 await database.insertMessages(allMessages)
 
+                if let contacts = try? await syncClient.fetchContacts() {
+                    await MainActor.run {
+                        ContactResolver.shared.setPhoneContacts(contacts.contacts)
+                    }
+                }
+
                 await MainActor.run {
                     self.messagesSynced = count
                     self.lastSyncDate = Date()
@@ -199,6 +205,16 @@ class SyncViewModel: ObservableObject {
         discovery.stopDiscovery()
         currentDevice = nil
         connectionState = .disconnected
+    }
+
+    func resetAfterCacheClear() {
+        messagesSynced = 0
+        lastSyncDate = nil
+        connectionState = .disconnected
+        currentDevice = nil
+        webSocketManager.disconnect()
+        discovery.stopDiscovery()
+        SMSDatabase.shared.refreshConversations()
     }
 
     func unpair() {

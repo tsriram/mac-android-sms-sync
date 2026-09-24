@@ -22,5 +22,7 @@
 	<true/>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
+	<key>NSContactsUsageDescription</key>
+	<string>SMSync reads your contacts to show names for phone numbers in your messages.</string>
 </dict>
 </plist>

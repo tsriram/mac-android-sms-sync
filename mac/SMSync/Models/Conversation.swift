@@ -14,7 +14,7 @@ struct Conversation: Identifiable, Hashable {
     }
 
     var lastMessage: SMSMessage? {
-        messages.last
+        messages.max { $0.date < $1.date }
     }
 
     var lastMessageDate: Date {

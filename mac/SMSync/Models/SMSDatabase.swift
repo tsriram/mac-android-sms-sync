@@ -138,6 +138,32 @@ class SMSDatabase: ObservableObject {
         conversations = fetchConversations()
     }
 
+    func clearCache() {
+        let context = container.newBackgroundContext()
+        context.performAndWait {
+            for entityName in ["SMSMessageEntity", "SyncStateEntity"] {
+                let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: entityName)
+                let deleteRequest = NSBatchDeleteRequest(fetchRequest: fetchRequest)
+                deleteRequest.resultType = .resultTypeObjectIDs
+                do {
+                    let result = try context.execute(deleteRequest) as? NSBatchDeleteResult
+                    if let objectIDs = result?.result as? [NSManagedObjectID] {
+                        NSManagedObjectContext.mergeChanges(
+                            fromRemoteContextSave: [NSDeletedObjectsKey: objectIDs],
+                            into: [container.viewContext]
+                        )
+                    }
+                } catch {
+                    print("Failed to clear entity \(entityName): \(error)")
+                }
+            }
+            try? context.save()
+        }
+        DispatchQueue.main.async {
+            self.conversations = []
+        }
+    }
+
     private func computeThreadHash(addresses: [String]) -> String {
         let sorted = addresses.sorted()
         let combined = sorted.joined(separator: ":")
