@@ -10,6 +10,16 @@ class PairingManager: ObservableObject {
     private enum Keys {
         static let deviceToken = "pairing.deviceToken"
         static let deviceName = "pairing.deviceName"
+        static let deviceHost = "pairing.deviceHost"
+        static let devicePort = "pairing.devicePort"
+    }
+
+    var lastKnownHost: String? {
+        defaults.string(forKey: Keys.deviceHost)
+    }
+
+    var lastKnownPort: Int {
+        defaults.integer(forKey: Keys.devicePort) != 0 ? defaults.integer(forKey: Keys.devicePort) : 8484
     }
 
     func generatePin() -> String {
@@ -38,8 +48,15 @@ class PairingManager: ObservableObject {
     func unpair() {
         defaults.removeObject(forKey: Keys.deviceToken)
         defaults.removeObject(forKey: Keys.deviceName)
+        defaults.removeObject(forKey: Keys.deviceHost)
+        defaults.removeObject(forKey: Keys.devicePort)
         isPaired = false
         pairedDeviceName = nil
         generatedPin = nil
+    }
+
+    func saveLastKnown(host: String, port: Int) {
+        defaults.set(host, forKey: Keys.deviceHost)
+        defaults.set(port, forKey: Keys.devicePort)
     }
 }

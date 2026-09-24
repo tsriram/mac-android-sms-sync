@@ -1,7 +1,19 @@
 import SwiftUI
 
+private let sidebarTimeFormatter: DateFormatter = {
+    let formatter = DateFormatter()
+    formatter.dateFormat = "h:mm a"
+    return formatter
+}()
+
+private let sidebarDateFormatter: DateFormatter = {
+    let formatter = DateFormatter()
+    formatter.dateFormat = "d MMM"
+    return formatter
+}()
+
 struct ConversationListView: View {
-    @Binding var selectedConversation: Conversation?
+    @Binding var selectedThreadHash: String?
     @ObservedObject var viewModel: SyncViewModel
     @ObservedObject private var database = SMSDatabase.shared
     @ObservedObject private var contacts = ContactResolver.shared
@@ -13,10 +25,10 @@ struct ConversationListView: View {
 
             Divider()
 
-            List(selection: $selectedConversation) {
+            List(selection: $selectedThreadHash) {
                 ForEach(filteredConversations) { conversation in
                     ConversationRow(conversation: conversation)
-                        .tag(conversation)
+                        .tag(conversation.id)
                 }
             }
             .listStyle(.plain)
@@ -86,6 +98,15 @@ struct ConversationRow: View {
         conversation.unreadCount > 0
     }
 
+    private var lastMessageTime: String {
+        let date = conversation.lastMessageDate
+        if Calendar.current.isDateInToday(date) {
+            return sidebarTimeFormatter.string(from: date)
+        } else {
+            return sidebarDateFormatter.string(from: date)
+        }
+    }
+
     var body: some View {
         HStack(spacing: 12) {
             AvatarView(name: contactName, size: 40)
@@ -98,7 +119,7 @@ struct ConversationRow: View {
 
                     Spacer(minLength: 8)
 
-                    Text(conversation.lastMessageDate, style: .relative)
+                    Text(lastMessageTime)
                         .font(.system(size: 11))
                         .foregroundStyle(.secondary)
                 }

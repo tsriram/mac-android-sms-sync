@@ -16,6 +16,7 @@ class BonjourDiscovery: ObservableObject {
     private var foundServices: [NetService] = []
 
     func startDiscovery() {
+        stopDiscovery()
         isScanning = true
         browser = NetServiceBrowser()
         serviceDelegate = ServiceDelegate()
@@ -30,30 +31,74 @@ class BonjourDiscovery: ObservableObject {
             }
         }
         browser?.delegate = serviceDelegate
-        browser?.searchForServices(ofType: "_smsync._tcp.", inDomain: "")
+        browser?.searchForServices(ofType: "_smsync._tcp.", inDomain: "local.")
     }
 
     func stopDiscovery() {
-        browser?.stop()
-        browser = nil
+        guard let browser = browser else { return }
+        browser.stop()
+        self.browser = nil
         serviceDelegate = nil
-        isScanning = false
         foundServices.removeAll()
+        isScanning = false
     }
 
     private func handleServiceFound(_ service: NetService) {
         guard !foundServices.contains(where: { $0.name == service.name }) else { return }
         foundServices.append(service)
-        service.resolve(withTimeout: 5000)
+        service.delegate = serviceDelegate
+        service.resolve(withTimeout: 5)
     }
 
     private func handleServiceResolved(_ service: NetService) {
-        guard let hostName = service.hostName else { return }
+        let port = service.port
+        let name = service.name
+
+        // Prefer an actual IPv4 address from the resolved record when available.
+        var address: String? = nil
+        if let addresses = service.addresses, !addresses.isEmpty {
+            for data in addresses {
+                var host = [CChar](repeating: 0, count: Int(NI_MAXHOST))
+                data.withUnsafeBytes { rawBuffer in
+                    let sockaddr = rawBuffer.bindMemory(to: sockaddr.self)
+                    getnameinfo(
+                        sockaddr.baseAddress,
+                        socklen_t(rawBuffer.count),
+                        &host,
+                        socklen_t(host.count),
+                        nil,
+                        0,
+                        NI_NUMERICHOST
+                    )
+                }
+                let hostStr = String(cString: host)
+                if isIPv4(hostStr) {
+                    address = hostStr
+                    break
+                } else if address == nil {
+                    address = hostStr
+                }
+            }
+        }
+
+        let host = address ?? service.hostName
+        guard let resolvedHost = host, !resolvedHost.isEmpty else {
+            print("Bonjour resolve: no usable address for \(name)")
+            return
+        }
+
         discoveredDevice = DiscoveredDevice(
-            name: service.name,
-            hostName: hostName,
-            port: service.port
+            name: name,
+            hostName: resolvedHost,
+            port: port
         )
+    }
+
+    private func isIPv4(_ value: String) -> Bool {
+        let parts = value.split(separator: ".")
+        guard parts.count == 4 else { return false }
+        return parts.allSatisfy { Int($0) != nil && (0...255).contains(Int($0)!)
+        }
     }
 }
 

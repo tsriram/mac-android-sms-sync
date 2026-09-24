@@ -31,6 +31,8 @@ class SyncViewModel: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
 
     private var currentDevice: BonjourDiscovery.DiscoveredDevice?
+    private var pollTimer: Timer?
+    private var isPolling = false
 
     var isConnected: Bool {
         if case .connected = connectionState { return true }
@@ -56,6 +58,32 @@ class SyncViewModel: ObservableObject {
     func startDiscovery() {
         connectionState = .discovering
         discovery.startDiscovery()
+        tryConnectLastKnownDevice()
+    }
+
+    private func tryConnectLastKnownDevice() {
+        guard currentDevice == nil,
+              let host = pairingManager.lastKnownHost else { return }
+
+        let device = BonjourDiscovery.DiscoveredDevice(
+            name: pairingManager.pairedDeviceName ?? "Android Phone",
+            hostName: host,
+            port: pairingManager.lastKnownPort
+        )
+        connectToDevice(device)
+    }
+
+    private func connectToDevice(_ device: BonjourDiscovery.DiscoveredDevice) {
+        currentDevice = device
+        connectionState = .discovered(device)
+        deviceName = device.name
+        syncClient.configure(host: device.hostName, port: device.port)
+
+        if pairingManager.isPaired {
+            connectAndSync()
+        } else {
+            startPairing()
+        }
     }
 
     func stopDiscovery() {
@@ -75,16 +103,7 @@ class SyncViewModel: ObservableObject {
 
     private func handleDeviceDiscovered(_ device: BonjourDiscovery.DiscoveredDevice) {
         guard currentDevice == nil || currentDevice?.hostName != device.hostName else { return }
-        currentDevice = device
-        connectionState = .discovered(device)
-        deviceName = device.name
-        syncClient.configure(host: device.hostName, port: device.port)
-
-        if pairingManager.isPaired {
-            connectAndSync()
-        } else {
-            startPairing()
-        }
+        connectToDevice(device)
     }
 
     func startPairing() {
@@ -172,8 +191,10 @@ class SyncViewModel: ObservableObject {
                     self.messagesSynced = count
                     self.lastSyncDate = Date()
                     self.connectionState = .connected
+                    self.pairingManager.saveLastKnown(host: device.hostName, port: device.port)
                 }
                 connectWebSocket(host: device.hostName, port: device.port)
+                startReconnectPoll()
                 await fetchContactsIfNeeded()
             } catch {
                 await MainActor.run {
@@ -196,7 +217,7 @@ class SyncViewModel: ObservableObject {
     }
 
     private func connectWebSocket(host: String, port: Int) {
-        webSocketManager.connect(host: host, port: port) { [weak self] message in
+        webSocketManager.connect(host: host, port: port, onMessage: { [weak self] message in
             let database = self?.database
             Task {
                 await database?.insertMessages([message])
@@ -204,11 +225,61 @@ class SyncViewModel: ObservableObject {
                     self?.messagesSynced += 1
                 }
             }
+        }, onReconnected: { [weak self] in
+            guard let self else { return }
+            Task {
+                let since = self.database.latestMessageDate()
+                do {
+                    let response = try await self.syncClient.fetchSMSSince(timestamp: since)
+                    guard !response.messages.isEmpty else { return }
+                    await self.database.insertMessages(response.messages)
+                    await MainActor.run {
+                        self.messagesSynced += response.messages.count
+                    }
+                } catch {
+                    print("Reconnect catch-up failed: \(error.localizedDescription)")
+                }
+            }
+        })
+    }
+
+    private func startReconnectPoll() {
+        stopReconnectPoll()
+        let timer = Timer(timeInterval: 10, repeats: true) { [weak self] _ in
+            guard let self else { return }
+            Task { await self.pollForNewMessages() }
+        }
+        RunLoop.main.add(timer, forMode: .common)
+        pollTimer = timer
+    }
+
+    private func stopReconnectPoll() {
+        pollTimer?.invalidate()
+        pollTimer = nil
+        isPolling = false
+    }
+
+    private func pollForNewMessages() async {
+        guard !isPolling, currentDevice != nil else { return }
+        isPolling = true
+        defer { isPolling = false }
+
+        let since = database.latestMessageDate()
+        do {
+            let response = try await syncClient.fetchSMSSince(timestamp: since)
+            guard !response.messages.isEmpty else { return }
+            await database.insertMessages(response.messages)
+            await MainActor.run {
+                self.messagesSynced += response.messages.count
+            }
+        } catch {
+            print("Poll failed: \(error.localizedDescription)")
         }
     }
 
     func disconnect() {
         webSocketManager.disconnect()
+        stopReconnectPoll()
         discovery.stopDiscovery()
         currentDevice = nil
         connectionState = .disconnected
@@ -220,6 +291,7 @@ class SyncViewModel: ObservableObject {
         connectionState = .disconnected
         currentDevice = nil
         webSocketManager.disconnect()
+        stopReconnectPoll()
         discovery.stopDiscovery()
         SMSDatabase.shared.refreshConversations()
     }

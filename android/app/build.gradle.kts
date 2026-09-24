@@ -41,4 +41,5 @@ dependencies {
     implementation("com.google.android.material:material:1.11.0")
     implementation("org.nanohttpd:nanohttpd:2.3.1")
     implementation("org.nanohttpd:nanohttpd-websocket:2.3.1")
+    implementation("org.jmdns:jmdns:3.5.9")
 }

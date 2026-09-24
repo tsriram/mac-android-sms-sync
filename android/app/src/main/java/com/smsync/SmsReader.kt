@@ -28,7 +28,7 @@ class SmsReader(private val contentResolver: ContentResolver) {
         )
 
         cursor?.use {
-            it.moveToPosition(offset)
+            it.moveToPosition(offset - 1)
             var count = 0
             while (it.moveToNext() && count < limit) {
                 val id = it.getLong(it.getColumnIndexOrThrow(Telephony.Sms._ID))

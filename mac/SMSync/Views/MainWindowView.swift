@@ -2,12 +2,18 @@ import SwiftUI
 
 struct MainWindowView: View {
     @ObservedObject var viewModel: SyncViewModel
-    @State private var selectedConversation: Conversation?
+    @ObservedObject private var database = SMSDatabase.shared
+    @State private var selectedThreadHash: String?
+
+    private var selectedConversation: Conversation? {
+        guard let hash = selectedThreadHash else { return nil }
+        return database.conversations.first { $0.id == hash }
+    }
 
     var body: some View {
         NavigationSplitView {
             VStack(spacing: 0) {
-                ConversationListView(selectedConversation: $selectedConversation, viewModel: viewModel)
+                ConversationListView(selectedThreadHash: $selectedThreadHash, viewModel: viewModel)
             }
             .frame(minWidth: 280, idealWidth: 320)
             .background(.bar)

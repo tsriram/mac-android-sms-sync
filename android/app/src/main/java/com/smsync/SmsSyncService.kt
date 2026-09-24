@@ -10,6 +10,9 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo
+import android.net.ConnectivityManager
+import android.net.Network
+import android.net.NetworkCapabilities
 import android.os.Build
 import android.os.IBinder
 import android.provider.Telephony
@@ -51,6 +54,9 @@ class SmsSyncService : Service() {
     private var contentObserver: SmsContentObserver? = null
     private var authManager: AuthManager? = null
     private var wifiLock: android.net.wifi.WifiManager.WifiLock? = null
+    private var networkCallback: ConnectivityManager.NetworkCallback? = null
+    private var currentNetwork: Network? = null
+    private val handler = android.os.Handler(android.os.Looper.getMainLooper())
 
     override fun onBind(intent: Intent): IBinder? = null
 
@@ -134,6 +140,7 @@ class SmsSyncService : Service() {
             )
 
             server.startServer()
+            registerNetworkCallback()
             mdnsAdvertiser?.register()
             contentObserver?.setInitialTimestamp(smsReader?.getLatestTimestamp() ?: 0L)
             contentResolver.registerContentObserver(
@@ -160,7 +167,73 @@ class SmsSyncService : Service() {
         }
     }
 
+    private fun registerNetworkCallback() {
+        try {
+            val connectivityManager = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+            networkCallback = object : ConnectivityManager.NetworkCallback() {
+                override fun onAvailable(network: Network) {
+                    Log.d(TAG, "Network available: $network")
+                    handler.post {
+                        if (currentNetwork == null ||
+                            currentNetwork?.equals(network) == false
+                        ) {
+                            currentNetwork = network
+                            refreshMdnsAndStatus()
+                        }
+                    }
+                }
+
+                override fun onLost(network: Network) {
+                    Log.d(TAG, "Network lost: $network")
+                    handler.post {
+                        if (currentNetwork == network) {
+                            currentNetwork = null
+                        }
+                    }
+                }
+
+                override fun onCapabilitiesChanged(network: Network, networkCapabilities: NetworkCapabilities) {
+                    if (networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) {
+                        Log.d(TAG, "Wi-Fi capabilities changed: $network")
+                    }
+                }
+            }
+            connectivityManager.registerDefaultNetworkCallback(networkCallback!!)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to register network callback", e)
+        }
+    }
+
+    private fun refreshMdnsAndStatus() {
+        runCatching {
+            mdnsAdvertiser?.deregister()
+            mdnsAdvertiser = MdnsAdvertiser(this)
+            mdnsAdvertiser?.register()
+        }.onFailure { Log.e(TAG, "Failed to re-register mDNS", it) }
+
+        val ip = getLocalIpAddress()
+        setStatus(
+            if (ip != null) {
+                "Server: Running at $ip:8484"
+            } else {
+                "Server: Running on port 8484 (IP unknown)"
+            }
+        )
+        updateNotification()
+    }
+
     private fun stopServer() {
+        try {
+            networkCallback?.let {
+                (getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager)
+                    .unregisterNetworkCallback(it)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to unregister network callback", e)
+        }
+        networkCallback = null
+        currentNetwork = null
+
         try {
             contentObserver?.let {
                 contentResolver.unregisterContentObserver(it)

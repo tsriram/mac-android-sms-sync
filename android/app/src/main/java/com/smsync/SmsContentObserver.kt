@@ -38,11 +38,11 @@ class SmsContentObserver(
     private fun checkForNewMessages() {
         val newMessages = smsReader.getSmsSince(lastKnownTimestamp)
         for (message in newMessages) {
+            Log.d(TAG, "New message from: ${message.address}")
             if (message.date > lastKnownTimestamp) {
-                Log.d(TAG, "New message from: ${message.address}")
                 lastKnownTimestamp = message.date
-                onNewMessage(message)
             }
+            onNewMessage(message)
         }
     }
 }
