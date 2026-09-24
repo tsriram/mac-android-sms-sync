@@ -1,71 +1,76 @@
 import SwiftUI
 
 struct SettingsView: View {
-    @StateObject private var pairingManager = PairingManager()
-    @State private var showPairingSheet = false
+    @ObservedObject var viewModel: SyncViewModel
 
     var body: some View {
         TabView {
-            ConnectionSettingsTab(pairingManager: pairingManager, showPairingSheet: $showPairingSheet)
+            ConnectionSettingsTab(viewModel: viewModel)
                 .tabItem { Label("Connection", systemImage: "wifi") }
 
-            SyncSettingsTab()
+            SyncSettingsTab(viewModel: viewModel)
                 .tabItem { Label("Sync", systemImage: "arrow.triangle.2.circlepath") }
 
             AboutTab()
                 .tabItem { Label("About", systemImage: "info.circle") }
         }
         .frame(width: 450, height: 300)
-        .sheet(isPresented: $showPairingSheet) {
-            PairingSheet(pairingManager: pairingManager)
-        }
     }
 }
 
 struct ConnectionSettingsTab: View {
-    @ObservedObject var pairingManager: PairingManager
-    @Binding var showPairingSheet: Bool
+    @ObservedObject var viewModel: SyncViewModel
 
     var body: some View {
         Form {
-            Section("Paired Device") {
-                if pairingManager.isPaired {
-                    HStack {
-                        Image(systemName: "checkmark.circle.fill")
-                            .foregroundColor(.green)
-                        Text(pairingManager.pairedDeviceName ?? "Unknown Device")
-                        Spacer()
-                        Button("Unpair") {
-                            pairingManager.unpair()
-                        }
-                        .foregroundColor(.red)
+            Section("Status") {
+                LabeledContent("State", value: statusText)
+                if let name = viewModel.deviceName {
+                    LabeledContent("Device", value: name)
+                }
+            }
+
+            Section("Actions") {
+                if viewModel.isConnected {
+                    Button("Disconnect") {
+                        viewModel.disconnect()
                     }
+                    .foregroundColor(.red)
                 } else {
-                    HStack {
-                        Image(systemName: "exclamationmark.circle")
-                            .foregroundColor(.orange)
-                        Text("No device paired")
-                        Spacer()
-                        Button("Pair Device") {
-                            showPairingSheet = true
-                        }
+                    Button("Connect") {
+                        viewModel.startDiscovery()
                     }
                 }
             }
         }
         .padding()
     }
+
+    private var statusText: String {
+        switch viewModel.connectionState {
+        case .disconnected: return "Disconnected"
+        case .discovering: return "Searching..."
+        case .discovered: return "Found"
+        case .pairing: return "Pairing"
+        case .connected: return "Connected"
+        case .syncing: return "Syncing"
+        case .error: return "Error"
+        }
+    }
 }
 
 struct SyncSettingsTab: View {
+    @ObservedObject var viewModel: SyncViewModel
+
     var body: some View {
         Form {
             Section("Sync Status") {
-                LabeledContent("Last Sync", value: "Never")
-                LabeledContent("Messages Synced", value: "0")
+                LabeledContent("Last Sync", value: viewModel.lastSyncDate?.formatted() ?? "Never")
+                LabeledContent("Messages Synced", value: "\(viewModel.messagesSynced)")
                 Button("Sync Now") {
-                    // TODO: Trigger sync
+                    viewModel.connectAndSync()
                 }
+                .disabled(!viewModel.isConnected)
             }
         }
         .padding()
@@ -86,41 +91,5 @@ struct AboutTab: View {
             }
         }
         .padding()
-    }
-}
-
-struct PairingSheet: View {
-    @ObservedObject var pairingManager: PairingManager
-    @Environment(\.dismiss) var dismiss
-
-    var body: some View {
-        VStack(spacing: 20) {
-            Text("Pair with Android")
-                .font(.title2)
-
-            Text("Enter this PIN on your Android app:")
-                .foregroundStyle(.secondary)
-
-            if let pin = pairingManager.generatedPin {
-                Text(pin)
-                    .font(.system(size: 48, weight: .bold, design: .monospaced))
-                    .padding()
-                    .background(Color(nsColor: .controlBackgroundColor))
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-            }
-
-            Text("Waiting for Android to connect...")
-                .foregroundStyle(.secondary)
-                .font(.caption)
-
-            Button("Cancel") {
-                dismiss()
-            }
-        }
-        .padding(32)
-        .frame(width: 350)
-        .onAppear {
-            _ = pairingManager.generatePin()
-        }
     }
 }

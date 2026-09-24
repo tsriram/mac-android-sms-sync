@@ -1,34 +1,60 @@
 import SwiftUI
 
 struct MenuBarView: View {
-    @StateObject private var discovery = BonjourDiscovery()
-    @StateObject private var syncClient = SMSSyncClient()
-    @StateObject private var pairingManager = PairingManager()
+    @ObservedObject var viewModel: SyncViewModel
+    @State private var manualIP = ""
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Circle()
-                    .fill(discovery.discoveredDevice != nil ? Color.green : Color.red)
+                    .fill(statusColor)
                     .frame(width: 8, height: 8)
-                Text(discovery.discoveredDevice != nil ? "Connected" : "Searching...")
+                Text(statusText)
                     .font(.caption)
                 Spacer()
             }
 
             Divider()
 
-            if let device = discovery.discoveredDevice {
-                Text(device.name)
+            if let name = viewModel.deviceName {
+                Text(name)
                     .font(.headline)
             }
 
-            Button("Sync Now") {
-                Task {
-                    await performSync()
+            HStack {
+                Text("\(viewModel.messagesSynced) messages")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Spacer()
+                if let lastSync = viewModel.lastSyncDate {
+                    Text(lastSync, style: .relative)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
                 }
             }
-            .disabled(discovery.discoveredDevice == nil)
+
+            Button("Sync Now") {
+                viewModel.connectAndSync()
+            }
+            .disabled(!viewModel.isConnected)
+
+            Divider()
+
+            DisclosureGroup("Connect manually") {
+                HStack {
+                    TextField("Phone IP (e.g. 192.168.1.20)", text: $manualIP)
+                        .textFieldStyle(.roundedBorder)
+                    Button("Connect") {
+                        viewModel.connectManually(to: manualIP)
+                    }
+                    .disabled(manualIP.isEmpty)
+                }
+                Text("Find your phone's IP in the Android app: the server status line shows it.")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+            .font(.caption)
 
             Divider()
 
@@ -40,27 +66,42 @@ struct MenuBarView: View {
             }
 
             Button("Settings...") {
-                // TODO: Open settings
+                NSApp.activate(ignoringOtherApps: true)
+                if let window = NSApp.windows.first(where: { $0.title == "SMSync" }) {
+                    window.makeKeyAndOrderFront(nil)
+                }
             }
 
             Divider()
 
             Button("Quit SMSync") {
+                viewModel.disconnect()
                 NSApplication.shared.terminate(nil)
             }
         }
         .padding(16)
         .frame(width: 280)
-        .onAppear {
-            discovery.startDiscovery()
-        }
-        .onDisappear {
-            discovery.stopDiscovery()
+    }
+
+    private var statusColor: Color {
+        switch viewModel.connectionState {
+        case .connected, .syncing: return .green
+        case .discovering, .discovered: return .orange
+        case .pairing: return .yellow
+        case .disconnected: return .gray
+        case .error: return .red
         }
     }
 
-    private func performSync() async {
-        guard let device = discovery.discoveredDevice else { return }
-        syncClient.configure(host: device.hostName, port: device.port)
+    private var statusText: String {
+        switch viewModel.connectionState {
+        case .disconnected: return "Disconnected"
+        case .discovering: return "Searching for phone..."
+        case .discovered: return "Phone found"
+        case .pairing: return "Pairing..."
+        case .connected: return "Connected"
+        case .syncing: return "Syncing..."
+        case .error: return "Error"
+        }
     }
 }

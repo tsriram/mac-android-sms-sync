@@ -27,6 +27,15 @@ class AuthManager(private val prefs: SharedPreferences) {
         return pin
     }
 
+    fun getActivePin(): String? {
+        val pin = prefs.getString(PREF_CURRENT_PIN, null) ?: return null
+        val expiry = prefs.getLong(PREF_PIN_EXPIRY, 0)
+        if (System.currentTimeMillis() > expiry) {
+            return null
+        }
+        return pin
+    }
+
     fun validatePin(pin: String): Boolean {
         val storedPin = prefs.getString(PREF_CURRENT_PIN, null) ?: return false
         val expiry = prefs.getLong(PREF_PIN_EXPIRY, 0)

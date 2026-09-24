@@ -3,6 +3,7 @@ package com.smsync
 import android.os.Handler
 import android.os.Looper
 import fi.iki.elonen.NanoHTTPD
+import fi.iki.elonen.NanoWSD
 import org.json.JSONArray
 import org.json.JSONObject
 import com.smsync.models.SmsMessage
@@ -12,12 +13,12 @@ class LocalServer(
     private val smsReader: SmsReader,
     private val authManager: AuthManager,
     private val onClientConnected: () -> Unit
-) : NanoHTTPD(8484) {
+) : NanoWSD(8484) {
 
-    private val connectedClients = mutableSetOf<String>()
+    private val wsClients = mutableSetOf<SmsWebSocket>()
     private val handler = Handler(Looper.getMainLooper())
 
-    override fun serve(session: IHTTPSession): Response {
+    override fun serve(session: IHTTPSession): NanoHTTPD.Response {
         val uri = session.uri
         val params = session.parms
 
@@ -26,12 +27,16 @@ class LocalServer(
             uri == "/api/pair/init" -> handlePairInit()
             uri == "/api/pair" -> handlePair(params)
             uri == "/api/sms" -> handleSms(params)
-            uri == "/ws" -> handleWebSocket(session)
+            uri == "/ws" -> super.serve(session)
             else -> newFixedLengthResponse(Response.Status.NOT_FOUND, "text/plain", "Not found")
         }
     }
 
-    private fun handleInfo(): Response {
+    override fun openWebSocket(handshake: IHTTPSession): NanoWSD.WebSocket {
+        return SmsWebSocket(handshake)
+    }
+
+    private fun handleInfo(): NanoHTTPD.Response {
         val json = JSONObject().apply {
             put("deviceName", android.os.Build.MODEL)
             put("totalSMS", smsReader.getTotalCount())
@@ -41,8 +46,8 @@ class LocalServer(
         return jsonResponse(json)
     }
 
-    private fun handlePairInit(): Response {
-        val pin = authManager.generatePin()
+    private fun handlePairInit(): NanoHTTPD.Response {
+        val pin = authManager.getActivePin() ?: authManager.generatePin()
         val json = JSONObject().apply {
             put("pin", pin)
             put("expiresIn", 120)
@@ -50,7 +55,7 @@ class LocalServer(
         return jsonResponse(json)
     }
 
-    private fun handlePair(params: Map<String, String>): Response {
+    private fun handlePair(params: Map<String, String>): NanoHTTPD.Response {
         val pin = params["pin"] ?: return jsonResponse(
             JSONObject().apply { put("paired", false); put("error", "Missing pin") },
             Response.Status.BAD_REQUEST
@@ -71,7 +76,7 @@ class LocalServer(
         )
     }
 
-    private fun handleSms(params: Map<String, String>): Response {
+    private fun handleSms(params: Map<String, String>): NanoHTTPD.Response {
         val since = params["since"]?.toLongOrNull()
         val offset = params["offset"]?.toIntOrNull() ?: 0
         val limit = params["limit"]?.toIntOrNull() ?: 500
@@ -102,12 +107,7 @@ class LocalServer(
         return jsonResponse(json)
     }
 
-    private fun handleWebSocket(session: IHTTPSession): Response {
-        // WebSocket upgrade will be handled in a future step
-        return newFixedLengthResponse(Response.Status.NOT_IMPLEMENTED, "text/plain", "WebSocket not yet implemented")
-    }
-
-    private fun jsonResponse(json: JSONObject, status: Response.Status = Response.Status.OK): Response {
+    private fun jsonResponse(json: JSONObject, status: Response.Status = Response.Status.OK): NanoHTTPD.Response {
         return newFixedLengthResponse(status, "application/json", json.toString())
     }
 
@@ -123,11 +123,45 @@ class LocalServer(
                 put("read", message.read)
             })
         }
-        // TODO: Broadcast to connected WebSocket clients
+        val messageStr = json.toString()
+        val iterator = wsClients.iterator()
+        while (iterator.hasNext()) {
+            val client = iterator.next()
+            try {
+                client.send(messageStr)
+            } catch (e: Exception) {
+                iterator.remove()
+            }
+        }
     }
 
     @Throws(IOException::class)
     fun startServer() {
         start(NanoHTTPD.SOCKET_READ_TIMEOUT, false)
+    }
+
+    inner class SmsWebSocket(handshake: IHTTPSession) : NanoWSD.WebSocket(handshake) {
+        override fun onOpen() {
+            wsClients.add(this)
+            handler.post { onClientConnected() }
+        }
+
+        override fun onClose(
+            code: NanoWSD.WebSocketFrame.CloseCode,
+            reason: String?,
+            initiatedByRemote: Boolean
+        ) {
+            wsClients.remove(this)
+        }
+
+        override fun onPong(frame: NanoWSD.WebSocketFrame?) {}
+
+        override fun onException(exception: IOException) {
+            wsClients.remove(this)
+        }
+
+        override fun onMessage(message: NanoWSD.WebSocketFrame?) {
+            // Client messages not handled in V1
+        }
     }
 }

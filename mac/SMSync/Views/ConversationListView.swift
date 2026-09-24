@@ -2,7 +2,9 @@ import SwiftUI
 
 struct ConversationListView: View {
     @Binding var selectedConversation: Conversation?
+    @ObservedObject var viewModel: SyncViewModel
     @State private var searchText = ""
+    @State private var conversations: [Conversation] = []
 
     var body: some View {
         List(selection: $selectedConversation) {
@@ -13,10 +15,23 @@ struct ConversationListView: View {
         }
         .searchable(text: $searchText, prompt: "Search conversations")
         .navigationTitle("Conversations")
+        .onAppear {
+            loadConversations()
+        }
+        .onChange(of: viewModel.messagesSynced) { _ in
+            loadConversations()
+        }
     }
 
     private var filteredConversations: [Conversation] {
-        []
+        if searchText.isEmpty {
+            return conversations
+        }
+        return conversations.filter { $0.contactName.localizedCaseInsensitiveContains(searchText) }
+    }
+
+    private func loadConversations() {
+        conversations = SMSDatabase.shared.fetchConversations()
     }
 }
 

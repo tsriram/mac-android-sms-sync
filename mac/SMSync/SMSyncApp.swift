@@ -3,10 +3,12 @@ import SwiftUI
 @main
 struct SMSyncApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+    @StateObject private var viewModel = SyncViewModel()
 
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environmentObject(viewModel)
         }
     }
 }
@@ -14,8 +16,10 @@ struct SMSyncApp: App {
 class AppDelegate: NSObject, NSApplicationDelegate {
     var statusItem: NSStatusItem?
     var popover = NSPopover()
+    var viewModel: SyncViewModel?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        NSApp.setActivationPolicy(.accessory)
         setupMenuBar()
     }
 
@@ -28,7 +32,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             button.target = self
         }
 
-        popover.contentViewController = NSHostingController(rootView: MenuBarView())
+        viewModel = SyncViewModel()
+        viewModel?.startDiscovery()
+        popover.contentViewController = NSHostingController(rootView: MenuBarView(viewModel: viewModel!))
         popover.behavior = .transient
     }
 
@@ -38,6 +44,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         if popover.isShown {
             popover.performClose(nil)
         } else {
+            if !(viewModel?.isConnected ?? false) {
+                viewModel?.startDiscovery()
+            }
             popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
             NSApp.activate(ignoringOtherApps: true)
         }

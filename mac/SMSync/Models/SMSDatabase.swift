@@ -10,12 +10,65 @@ class SMSDatabase: ObservableObject {
     @Published var conversations: [Conversation] = []
 
     init() {
-        container = NSPersistentContainer(name: "SMSync")
-        container.loadPersistentStores { description, error in
+        let container = NSPersistentContainer(
+            name: "SMSync",
+            managedObjectModel: Self.makeModel()
+        )
+
+        if let storeURL = SMSDatabase.storeURL {
+            let description = NSPersistentStoreDescription(url: storeURL)
+            container.persistentStoreDescriptions = [description]
+        }
+
+        container.loadPersistentStores { _, error in
             if let error = error {
                 fatalError("Failed to load Core Data stack: \(error)")
             }
         }
+        self.container = container
+    }
+
+    static var storeURL: URL? {
+        let baseURL = FileManager.default
+            .urls(for: .applicationSupportDirectory, in: .userDomainMask)
+            .first
+            .map { $0.appendingPathComponent("SMSync", isDirectory: true) }
+        guard let baseURL else { return nil }
+        try? FileManager.default.createDirectory(
+            at: baseURL,
+            withIntermediateDirectories: true
+        )
+        return baseURL.appendingPathComponent("SMSync.sqlite")
+    }
+
+    private static func makeModel() -> NSManagedObjectModel {
+        let messageEntity = NSEntityDescription()
+        messageEntity.name = "SMSMessageEntity"
+        messageEntity.managedObjectClassName = "SMSMessageEntity"
+        messageEntity.properties = [
+            NSAttributeDescription(name: "id", type: .integer64AttributeType, optional: false),
+            NSAttributeDescription(name: "address", type: .stringAttributeType, optional: false),
+            NSAttributeDescription(name: "body", type: .stringAttributeType, optional: false),
+            NSAttributeDescription(name: "date", type: .dateAttributeType, optional: false),
+            NSAttributeDescription(name: "type", type: .integer16AttributeType, optional: false),
+            NSAttributeDescription(name: "read", type: .booleanAttributeType, optional: false),
+            NSAttributeDescription(name: "contactName", type: .stringAttributeType, optional: true),
+            NSAttributeDescription(name: "threadHash", type: .stringAttributeType, optional: true)
+        ]
+
+        let syncStateEntity = NSEntityDescription()
+        syncStateEntity.name = "SyncStateEntity"
+        syncStateEntity.managedObjectClassName = "SyncStateEntity"
+        syncStateEntity.properties = [
+            NSAttributeDescription(name: "deviceID", type: .stringAttributeType, optional: true),
+            NSAttributeDescription(name: "lastSyncTimestamp", type: .dateAttributeType, optional: true),
+            NSAttributeDescription(name: "pairedAt", type: .dateAttributeType, optional: true),
+            NSAttributeDescription(name: "totalSynced", type: .integer64AttributeType, optional: false)
+        ]
+
+        let model = NSManagedObjectModel()
+        model.entities = [messageEntity, syncStateEntity]
+        return model
     }
 
     var viewContext: NSManagedObjectContext {
@@ -90,6 +143,15 @@ class SMSDatabase: ObservableObject {
         let sorted = addresses.sorted()
         let combined = sorted.joined(separator: ":")
         return combined.sha256()
+    }
+}
+
+private extension NSAttributeDescription {
+    convenience init(name: String, type: NSAttributeType, optional: Bool) {
+        self.init()
+        self.name = name
+        self.attributeType = type
+        self.isOptional = optional
     }
 }
 
