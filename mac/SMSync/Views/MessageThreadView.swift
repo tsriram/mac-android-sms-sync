@@ -6,6 +6,14 @@ struct MessageThreadView: View {
     @State private var showDetails = false
     @ObservedObject private var contacts = ContactResolver.shared
 
+    private let messageGroups: [MessageGroup]
+
+    init(conversation: Conversation) {
+        self.conversation = conversation
+        let ascending = conversation.messages.sorted { $0.date < $1.date }
+        self.messageGroups = MessageGroup.build(from: ascending)
+    }
+
     private var contactName: String {
         ContactResolver.shared.displayName(for: conversation.contactName)
     }
@@ -17,15 +25,6 @@ struct MessageThreadView: View {
     var body: some View {
         HStack(spacing: 0) {
             VStack(spacing: 0) {
-                ConversationHeader(
-                    name: contactName,
-                    phone: friendlyNumber,
-                    detailsActive: showDetails,
-                    onToggleDetails: { withAnimation(.easeInOut(duration: 0.2)) { showDetails.toggle() } }
-                )
-
-                Divider()
-
                 MessageScrollView(groups: messageGroups)
             }
 
@@ -37,15 +36,20 @@ struct MessageThreadView: View {
                     lastMessageDate: conversation.lastMessageDate
                 )
                 .frame(width: 300)
-                .transition(.move(edge: .trailing))
+                .transition(.move(edge: .trailing).combined(with: .opacity))
             }
         }
-        .navigationTitle(contactName)
-    }
-
-    private var messageGroups: [MessageGroup] {
-        let ascending = conversation.messages.sorted { $0.date < $1.date }
-        return MessageGroup.build(from: ascending)
+        .toolbar {
+            ToolbarItem(placement: .principal) {
+                ConversationHeader(
+                    name: contactName,
+                    phone: friendlyNumber,
+                    detailsActive: showDetails,
+                    onToggleDetails: { withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) { showDetails.toggle() } }
+                )
+            }
+        }
+        .toolbarBackground(.visible, for: .windowToolbar)
     }
 }
 
@@ -56,39 +60,28 @@ struct ConversationHeader: View {
     let onToggleDetails: () -> Void
 
     var body: some View {
-        HStack(spacing: 12) {
-            Button(action: onToggleDetails) {
-                Image(systemName: detailsActive ? "info.circle.fill" : "info.circle")
-                    .font(.title3)
-                    .foregroundStyle(detailsActive ? Color.accentColor : .secondary)
-                    .frame(width: 36, height: 36)
-                    .background(Color.primary.opacity(0.04), in: Circle())
-            }
-            .buttonStyle(.plain)
-            .help("Details")
-
-            Spacer()
-
-            VStack(spacing: 2) {
-                Text(name)
-                    .font(.headline)
-                    .lineLimit(1)
-                if !phone.isEmpty {
-                    Text(phone)
+        Button(action: onToggleDetails) {
+            HStack(spacing: 8) {
+                if detailsActive {
+                    Image(systemName: "arrow.right")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
+
+                VStack(spacing: 2) {
+                    Text(name)
+                        .font(.headline)
+                        .lineLimit(1)
+                    if !phone.isEmpty {
+                        Text(phone)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
             }
-
-            Spacer()
-
-            Color.clear
-                .frame(width: 36, height: 36)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 10)
-        .frame(maxWidth: .infinity)
-        .background(.bar)
+        .buttonStyle(.plain)
+        .help("Toggle details")
     }
 }
 

@@ -1,5 +1,4 @@
 import Foundation
-import Contacts
 
 class ContactResolver: ObservableObject {
     static let shared = ContactResolver()
@@ -7,10 +6,15 @@ class ContactResolver: ObservableObject {
     @Published var phoneContactCache: [String: String] = [:]
     @Published private(set) var phoneContactCount = 0
 
-    private let contactStore = CNContactStore()
+    private var cacheURL: URL {
+        let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+        let dir = base.appendingPathComponent("SMSync", isDirectory: true)
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        return dir.appendingPathComponent("contact-cache.json")
+    }
 
-    var authorizationStatus: CNAuthorizationStatus {
-        CNContactStore.authorizationStatus(for: .contacts)
+    init() {
+        loadCache()
     }
 
     func setPhoneContacts(_ contacts: [SMSSyncClient.ContactJSON]) {
@@ -24,59 +28,7 @@ class ContactResolver: ObservableObject {
         }
         phoneContactCache = cache
         phoneContactCount = cache.count
-    }
-
-    func resolveAllContacts() {
-        switch authorizationStatus {
-        case .notDetermined:
-            contactStore.requestAccess(for: .contacts) { [weak self] granted, _ in
-                if granted {
-                    self?.buildMacCache()
-                }
-            }
-        case .authorized:
-            buildMacCache()
-        default:
-            print("Contacts access denied or restricted, skipping Mac name resolution")
-        }
-    }
-
-    private func buildMacCache() {
-        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
-            guard let self = self else { return }
-
-            let keysToFetch = [
-                CNContactGivenNameKey as CNKeyDescriptor,
-                CNContactFamilyNameKey as CNKeyDescriptor,
-                CNContactOrganizationNameKey as CNKeyDescriptor,
-                CNContactPhoneNumbersKey as CNKeyDescriptor
-            ]
-
-            let request = CNContactFetchRequest(keysToFetch: keysToFetch)
-            var cache: [String: String] = [:]
-
-            do {
-                try self.contactStore.enumerateContacts(with: request) { contact, _ in
-                    let name = self.displayName(for: contact)
-                    for phoneNumber in contact.phoneNumbers {
-                        let number = phoneNumber.value.stringValue
-                        let normalized = self.normalizePhoneNumber(number)
-                        if !normalized.isEmpty && !name.isEmpty {
-                            cache[normalized] = name
-                        }
-                    }
-                }
-            } catch {
-                print("Failed to fetch contacts: \(error)")
-            }
-
-            DispatchQueue.main.async {
-                if self.phoneContactCache.isEmpty {
-                    self.phoneContactCache = cache
-                    self.phoneContactCount = cache.count
-                }
-            }
-        }
+        saveCache()
     }
 
     func lookupName(for phoneNumber: String) -> String? {
@@ -108,17 +60,31 @@ class ContactResolver: ObservableObject {
         return number
     }
 
-    private func displayName(for contact: CNContact) -> String {
-        let personName = "\(contact.givenName) \(contact.familyName)".trimmingCharacters(in: .whitespaces)
-        if !personName.isEmpty { return personName }
-        return contact.organizationName
-    }
-
     private func normalizePhoneNumber(_ number: String) -> String {
         let digits = number.components(separatedBy: CharacterSet.decimalDigits.inverted).joined()
         if digits.count >= 10 {
             return String(digits.suffix(10))
         }
         return digits
+    }
+
+    private func saveCache() {
+        do {
+            let data = try JSONEncoder().encode(phoneContactCache)
+            try data.write(to: cacheURL, options: .atomic)
+        } catch {
+            print("Failed to save contact cache: \(error)")
+        }
+    }
+
+    private func loadCache() {
+        guard let data = try? Data(contentsOf: cacheURL) else { return }
+        do {
+            let cache = try JSONDecoder().decode([String: String].self, from: data)
+            phoneContactCache = cache
+            phoneContactCount = cache.count
+        } catch {
+            print("Failed to load contact cache: \(error)")
+        }
     }
 }
