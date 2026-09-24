@@ -35,6 +35,13 @@ struct MenuBarView: View {
                 }
             }
 
+            HStack {
+                Text("\(ContactResolver.shared.phoneContactCount) contacts resolved")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Spacer()
+            }
+
             Button("Sync Now") {
                 viewModel.connectAndSync()
             }

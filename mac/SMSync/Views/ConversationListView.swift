@@ -76,9 +76,10 @@ struct ConversationListView: View {
 
 struct ConversationRow: View {
     let conversation: Conversation
+    @ObservedObject private var contacts = ContactResolver.shared
 
     private var contactName: String {
-        ContactResolver.shared.displayName(for: conversation.contactName)
+        contacts.displayName(for: conversation.contactName)
     }
 
     private var hasUnread: Bool {

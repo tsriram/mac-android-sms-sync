@@ -168,23 +168,30 @@ class SyncViewModel: ObservableObject {
                 let count = allMessages.count
                 await database.insertMessages(allMessages)
 
-                if let contacts = try? await syncClient.fetchContacts() {
-                    await MainActor.run {
-                        ContactResolver.shared.setPhoneContacts(contacts.contacts)
-                    }
-                }
-
                 await MainActor.run {
                     self.messagesSynced = count
                     self.lastSyncDate = Date()
                     self.connectionState = .connected
                 }
                 connectWebSocket(host: device.hostName, port: device.port)
+                await fetchContactsIfNeeded()
             } catch {
                 await MainActor.run {
                     self.connectionState = .error("Sync failed: \(error.localizedDescription)")
                 }
             }
+        }
+    }
+
+    private func fetchContactsIfNeeded() async {
+        guard ContactResolver.shared.phoneContactCount == 0 else { return }
+        do {
+            let contacts = try await syncClient.fetchContacts()
+            await MainActor.run {
+                ContactResolver.shared.setPhoneContacts(contacts.contacts)
+            }
+        } catch {
+            print("Contact fetch failed: \(error.localizedDescription)")
         }
     }
 
