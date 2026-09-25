@@ -6,98 +6,66 @@ struct MenuBarView: View {
     @State private var confirmClearCache = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Circle()
-                    .fill(statusColor)
-                    .frame(width: 8, height: 8)
-                Text(statusText)
-                    .font(.caption)
-                Spacer()
-            }
+        VStack(alignment: .leading, spacing: 14) {
+            header
 
-            Divider()
+            statusCard
 
-            if let name = viewModel.deviceName {
-                Text(name)
-                    .font(.headline)
-            }
-
-            HStack {
-                Text("\(viewModel.messagesSynced) messages")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Spacer()
-                if let lastSync = viewModel.lastSyncDate {
-                    Text(lastSync, style: .relative)
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                }
-            }
-
-            HStack {
-                Text("\(ContactResolver.shared.phoneContactCount) contacts resolved")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Spacer()
-            }
-
-            Button("Sync Now") {
-                viewModel.connectAndSync()
-            }
-            .disabled(!viewModel.isConnected)
-
-            Divider()
+            statsCard
 
             if viewModel.showPairingSheet {
                 MenuBarPairingView(viewModel: viewModel)
-                Divider()
             }
 
-            DisclosureGroup("Connect manually") {
-                HStack {
-                    TextField("Phone IP (e.g. 192.168.1.20)", text: $manualIP)
-                        .textFieldStyle(.roundedBorder)
-                    Button("Connect") {
-                        viewModel.connectManually(to: manualIP)
+            VStack(spacing: 2) {
+                actionRow(title: "Sync Now", symbol: "arrow.clockwise", disabled: !viewModel.isConnected) {
+                    viewModel.connectAndSync()
+                }
+
+                DisclosureGroup(isExpanded: $showManualConnect) {
+                    VStack(spacing: 8) {
+                        HStack(spacing: 8) {
+                            TextField("IP e.g. 10.0.0.167", text: $manualIP)
+                                .textFieldStyle(.roundedBorder)
+                                .font(.system(size: 12))
+                            Button("Connect") {
+                                viewModel.connectManually(to: manualIP)
+                                manualIP = ""
+                            }
+                            .disabled(manualIP.isEmpty)
+                            .controlSize(.small)
+                        }
+                        Text("Found inside the Android app — the server status line shows the IP.")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
                     }
-                    .disabled(manualIP.isEmpty)
+                    .padding(.top, 8)
+                    .padding(.leading, 22)
+                } label: {
+                    Label("Connect manually", systemImage: "link")
+                        .font(.system(size: 13))
                 }
-                Text("Find your phone's IP in the Android app: the server status line shows it.")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-            }
-            .font(.caption)
-
-            Divider()
-
-            Button("Open Full Window") {
-                NSApp.activate(ignoringOtherApps: true)
-                if let window = NSApp.windows.first(where: { $0.title == "SMSync" }) {
-                    window.makeKeyAndOrderFront(nil)
-                }
-            }
-
-            Button("Clear Local Cache…") {
-                confirmClearCache = true
-            }
-
-            Button("Settings...") {
-                NSApp.activate(ignoringOtherApps: true)
-                if let window = NSApp.windows.first(where: { $0.title == "SMSync" }) {
-                    window.makeKeyAndOrderFront(nil)
-                }
+                .font(.caption)
             }
 
             Divider()
 
-            Button("Quit SMSync") {
-                viewModel.disconnect()
-                NSApplication.shared.terminate(nil)
+            VStack(spacing: 2) {
+                actionRow(title: "Open Full Window", symbol: "macwindow") {
+                    openMainWindow()
+                }
+                actionRow(title: "Clear Local Cache…", symbol: "trash") {
+                    confirmClearCache = true
+                }
+                actionRow(title: "Quit SMSync", symbol: "power") {
+                    viewModel.disconnect()
+                    NSApplication.shared.terminate(nil)
+                }
             }
         }
-        .padding(16)
-        .frame(width: 280)
+        .padding(14)
+        .frame(width: 300)
         .alert("Clear Local Cache?", isPresented: $confirmClearCache) {
             Button("Clear Cache", role: .destructive) {
                 SMSDatabase.shared.clearCache()
@@ -109,52 +77,132 @@ struct MenuBarView: View {
         }
     }
 
-    struct MenuBarPairingView: View {
-    @ObservedObject var viewModel: SyncViewModel
-    @State private var enteredPin = ""
+    @State private var showManualConnect = false
 
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Pair with phone")
-                .font(.headline)
+    private var header: some View {
+        HStack(spacing: 10) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .fill(LinearGradient(
+                        colors: [Color.blue.opacity(0.85), Color.blue.opacity(0.55)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ))
+                    .frame(width: 34, height: 34)
+                Image(systemName: "message.fill")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(.white)
+            }
+            .shadow(color: .blue.opacity(0.3), radius: 4, y: 1)
 
-            if let error = viewModel.pairingError {
-                Text(error)
-                    .foregroundColor(.red)
-                    .font(.caption)
+            VStack(alignment: .leading, spacing: 1) {
+                Text("SMSync")
+                    .font(.system(size: 14, weight: .semibold))
+                Text(subtitle)
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
             }
 
-            Text("Enter the 6-digit PIN shown on your phone:")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-
-            HStack {
-                TextField("PIN", text: $enteredPin)
-                    .textFieldStyle(.roundedBorder)
-                    .font(.system(size: 16, weight: .bold, design: .monospaced))
-                    .multilineTextAlignment(.center)
-                    .onChange(of: enteredPin) { newValue in
-                        enteredPin = String(newValue.filter { $0.isNumber }.prefix(6))
-                    }
-                Button("Pair") {
-                    viewModel.completePairing(pin: enteredPin)
-                }
-                .disabled(enteredPin.count != 6)
-            }
-
-            Text("Keep SMSync open on your phone. PIN expires in 2 minutes.")
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-
-            Button("Cancel pairing") {
-                viewModel.cancelPairing()
-            }
-            .font(.caption)
+            Spacer()
         }
     }
-}
 
-private var statusColor: Color {
+    private var subtitle: String {
+        if let name = viewModel.deviceName {
+            return name
+        }
+        return "Mac ↔ Android SMS sync"
+    }
+
+    private var statusCard: some View {
+        HStack(spacing: 10) {
+            ZStack {
+                Circle()
+                    .fill(statusColor.opacity(0.18))
+                    .frame(width: 22, height: 22)
+                Circle()
+                    .fill(statusColor)
+                    .frame(width: 9, height: 9)
+            }
+
+            VStack(alignment: .leading, spacing: 1) {
+                Text(statusText)
+                    .font(.system(size: 13, weight: .medium))
+                if isActive {
+                    Text(activeDetail)
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            Spacer()
+        }
+        .padding(10)
+        .background(Color(nsColor: .controlBackgroundColor).opacity(0.6), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
+        )
+    }
+
+    private var statsCard: some View {
+        HStack(spacing: 0) {
+            statTile(value: "\(viewModel.messagesSynced)", label: "Messages")
+            statDivider
+            statTile(value: "\(ContactResolver.shared.phoneContactCount)", label: "Contacts")
+            statDivider
+            statTile(value: lastSyncShort, label: "Last sync")
+        }
+        .padding(.vertical, 10)
+        .background(Color(nsColor: .controlBackgroundColor).opacity(0.6), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
+        )
+    }
+
+    private var statDivider: some View {
+        Rectangle()
+            .fill(Color.primary.opacity(0.08))
+            .frame(width: 1, height: 26)
+    }
+
+    private func statTile(value: String, label: String) -> some View {
+        VStack(spacing: 2) {
+            Text(value)
+                .font(.system(size: 15, weight: .semibold, design: .rounded))
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
+            Text(label)
+                .font(.system(size: 10))
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private var lastSyncShort: String {
+        guard let date = viewModel.lastSyncDate else { return "—" }
+        return date.formatted(.relative(presentation: .named).locale(Locale(identifier: "en")))
+    }
+
+    private var isActive: Bool {
+        switch viewModel.connectionState {
+        case .connected, .syncing: return true
+        default: return false
+        }
+    }
+
+    private var activeDetail: String {
+        switch viewModel.connectionState {
+        case .syncing: return "Fetching messages…"
+        case .connected:
+            guard let date = viewModel.lastSyncDate else { return "Up to date" }
+            return "Up to date as of \(date.formatted(date: .omitted, time: .shortened))"
+        default: return ""
+        }
+    }
+
+    private var statusColor: Color {
         switch viewModel.connectionState {
         case .connected, .syncing: return .green
         case .discovering, .discovered: return .orange
@@ -173,6 +221,91 @@ private var statusColor: Color {
         case .connected: return "Connected"
         case .syncing: return "Syncing..."
         case .error: return "Error"
+        }
+    }
+
+    private func actionRow(title: String, symbol: String, role: ButtonRole? = nil, disabled: Bool = false, action: @escaping () -> Void) -> some View {
+        Button(role: role, action: action) {
+            HStack(spacing: 8) {
+                Image(systemName: symbol)
+                    .font(.system(size: 12, weight: .medium))
+                    .frame(width: 18)
+                    .foregroundStyle(disabled ? AnyShapeStyle(.tertiary) : AnyShapeStyle(.secondary))
+                Text(title)
+                    .font(.system(size: 13))
+                Spacer()
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .disabled(disabled)
+        .foregroundStyle(.primary)
+    }
+
+    private func openMainWindow() {
+        NSApp.activate(ignoringOtherApps: true)
+        if let window = NSApp.windows.first(where: { $0.title == "SMSync" }) {
+            window.makeKeyAndOrderFront(nil)
+        }
+    }
+
+    struct MenuBarPairingView: View {
+        @ObservedObject var viewModel: SyncViewModel
+        @State private var enteredPin = ""
+
+        var body: some View {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(spacing: 6) {
+                    Image(systemName: "link.badge.plus")
+                        .foregroundStyle(.blue)
+                    Text("Pair with phone")
+                        .font(.system(size: 13, weight: .semibold))
+                }
+
+                if let error = viewModel.pairingError {
+                    Text(error)
+                        .foregroundColor(.red)
+                        .font(.caption)
+                }
+
+                Text("Enter the 6-digit PIN shown on your phone:")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                HStack(spacing: 8) {
+                    TextField("PIN", text: $enteredPin)
+                        .textFieldStyle(.roundedBorder)
+                        .font(.system(size: 16, weight: .bold, design: .monospaced))
+                        .multilineTextAlignment(.center)
+                        .onChange(of: enteredPin) { newValue in
+                            enteredPin = String(newValue.filter { $0.isNumber }.prefix(6))
+                        }
+                    Button("Pair") {
+                        viewModel.completePairing(pin: enteredPin)
+                    }
+                    .disabled(enteredPin.count != 6)
+                    .controlSize(.small)
+                }
+
+                HStack {
+                    Text("PIN expires in 2 minutes.")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    Button("Cancel") {
+                        viewModel.cancelPairing()
+                    }
+                    .font(.caption)
+                    .buttonStyle(.plain)
+                    .foregroundStyle(.secondary)
+                }
+            }
+            .padding(10)
+            .background(Color(nsColor: .controlBackgroundColor).opacity(0.6), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
+            )
         }
     }
 }
