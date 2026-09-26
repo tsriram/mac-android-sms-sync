@@ -33,6 +33,7 @@ class SyncViewModel: ObservableObject {
     private var currentDevice: BonjourDiscovery.DiscoveredDevice?
     private var pollTimer: Timer?
     private var isPolling = false
+    private var retryWorkItem: DispatchWorkItem?
 
     var isConnected: Bool {
         if case .connected = connectionState { return true }
@@ -206,8 +207,21 @@ class SyncViewModel: ObservableObject {
                 await MainActor.run {
                     self.connectionState = .error("Sync failed: \(error.localizedDescription)")
                 }
+                self.scheduleReconnectRetry()
             }
         }
+    }
+
+    private func scheduleReconnectRetry() {
+        retryWorkItem?.cancel()
+        let workItem = DispatchWorkItem { [weak self] in
+            guard let self else { return }
+            guard self.pairingManager.isPaired else { return }
+            self.currentDevice = nil
+            self.startDiscovery()
+        }
+        retryWorkItem = workItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + 5, execute: workItem)
     }
 
     private func fetchContactsIfNeeded() async {
@@ -296,6 +310,8 @@ class SyncViewModel: ObservableObject {
     }
 
     func disconnect() {
+        retryWorkItem?.cancel()
+        retryWorkItem = nil
         webSocketManager.disconnect()
         stopReconnectPoll()
         discovery.stopDiscovery()
@@ -304,6 +320,8 @@ class SyncViewModel: ObservableObject {
     }
 
     func resetAfterCacheClear() {
+        retryWorkItem?.cancel()
+        retryWorkItem = nil
         messagesSynced = 0
         lastSyncDate = nil
         connectionState = .disconnected
