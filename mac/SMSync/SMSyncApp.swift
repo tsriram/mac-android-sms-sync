@@ -20,6 +20,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
         setupMenuBar()
+        hideMainWindow()
+    }
+
+    private func hideMainWindow() {
+        NSApp.windows.first(where: { $0.title == "SMSync" })?.orderOut(nil)
     }
 
     private func setupMenuBar() {
@@ -48,6 +53,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             }
             popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
             NSApp.activate(ignoringOtherApps: true)
+            hideMainWindow()
         }
     }
 }
