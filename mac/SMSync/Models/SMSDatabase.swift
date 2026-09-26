@@ -110,6 +110,11 @@ class SMSDatabase: ObservableObject {
         return Int64(date.timeIntervalSince1970 * 1000)
     }
 
+    func latestMessageCount() -> Int {
+        let fetchRequest: NSFetchRequest<SMSMessageEntity> = SMSMessageEntity.fetchRequest()
+        return (try? viewContext.count(for: fetchRequest)) ?? 0
+    }
+
     func fetchConversations() -> [Conversation] {
         let fetchRequest: NSFetchRequest<SMSMessageEntity> = SMSMessageEntity.fetchRequest()
         fetchRequest.sortDescriptors = [NSSortDescriptor(key: "date", ascending: false)]

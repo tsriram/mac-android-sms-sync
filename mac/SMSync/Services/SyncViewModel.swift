@@ -56,6 +56,12 @@ class SyncViewModel: ObservableObject {
     }
 
     func startDiscovery() {
+        // Keep the current status if we already have a device and an active
+        // connection; "searching" should only appear when nothing is connected.
+        if currentDevice != nil {
+            discovery.startDiscovery()
+            return
+        }
         connectionState = .discovering
         discovery.startDiscovery()
         tryConnectLastKnownDevice()
@@ -267,10 +273,22 @@ class SyncViewModel: ObservableObject {
         let since = database.latestMessageDate()
         do {
             let response = try await syncClient.fetchSMSSince(timestamp: since)
-            guard !response.messages.isEmpty else { return }
-            await database.insertMessages(response.messages)
             await MainActor.run {
-                self.messagesSynced += response.messages.count
+                self.lastSyncDate = Date()
+                // A successful poll proves the link is alive — reflect that.
+                if case .connected = self.connectionState {
+                    // already connected
+                } else if case .syncing = self.connectionState {
+                    // mid-sync, leave it alone
+                } else {
+                    self.connectionState = .connected
+                }
+            }
+            if !response.messages.isEmpty {
+                await database.insertMessages(response.messages)
+                await MainActor.run {
+                    self.messagesSynced = self.database.latestMessageCount()
+                }
             }
         } catch {
             print("Poll failed: \(error.localizedDescription)")
